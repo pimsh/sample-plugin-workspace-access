@@ -80,7 +80,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		   * @see ro.sync.exml.workspace.api.standalone.MenuBarCustomizer#customizeMainMenu(javax.swing.JMenuBar)
 		   */
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
-			  JMenu myMenu = new JMenu("My menu");
+			  JMenu myMenu = new JMenu("MENU HERE");
+			  myMenu.add(selectionSourceAction);
 			  myMenu.add(selectionSourceAction);
 			  // Add your menu before the Help menu
 			  mainMenuBar.add(myMenu, mainMenuBar.getMenuCount() - 1);
@@ -202,12 +203,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	 * Create the Swing action which shows the current selection.
 	 * 
 	 * @param pluginWorkspaceAccess The plugin workspace access.
-	 * @return The "Show Selection" action
+	 * @return The "HELLO" action
 	 */
 	@SuppressWarnings("serial")
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
-		return new AbstractAction("Show Selection") {
+		return new AbstractAction("HELLO") {
 			  public void actionPerformed(ActionEvent actionevent) {
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
