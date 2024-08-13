@@ -80,11 +80,15 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		   * @see ro.sync.exml.workspace.api.standalone.MenuBarCustomizer#customizeMainMenu(javax.swing.JMenuBar)
 		   */
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
-			  JMenu myMenu = new JMenu("MENU HERE");
-			  myMenu.add(selectionSourceAction);
-			  myMenu.add(selectionSourceAction);
-			  // Add your menu before the Help menu
-			  mainMenuBar.add(myMenu, mainMenuBar.getMenuCount() - 1);
+//			  JMenu myFirstMenu = new JMenu("Menu1");
+//			  myFirstMenu.add(selectionSourceAction);
+//			  // Add your menu before the Help menu
+//			  mainMenuBar.add(myFirstMenu, mainMenuBar.getMenuCount() - 2);
+			  
+			  JMenu mySecondMenu = new JMenu("Menu2");
+			  mySecondMenu.add(selectionSourceAction);
+			  mySecondMenu.add(selectionSourceAction);
+			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
 	  });
 
