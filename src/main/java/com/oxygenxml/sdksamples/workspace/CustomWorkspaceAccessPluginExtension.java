@@ -54,6 +54,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
+	final Action anotherAction = createNewShowSelectionAction(pluginWorkspaceAccess);
 	//Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
 				/**
@@ -71,6 +72,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 						WSTextEditorPage textPage) {
 					// Add our custom action
 					popup.add(selectionSourceAction);
+					popup.add(anotherAction);
 				}
 			});
 
@@ -87,7 +89,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			  
 			  JMenu mySecondMenu = new JMenu("Menu2");
 			  mySecondMenu.add(selectionSourceAction);
-			  mySecondMenu.add(selectionSourceAction);
+			  mySecondMenu.add(anotherAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
 	  });
@@ -181,10 +183,13 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				  ToolbarButton customButton = new ToolbarButton(selectionSourceAction, true);
 				  comps.add(customButton);
 				  toolbarInfo.setComponents(comps.toArray(new JComponent[0]));
+				  ToolbarButton customButton2 = new ToolbarButton(anotherAction, true);
+				  comps.add(customButton2);
+				  toolbarInfo.setComponents(comps.toArray(new JComponent[0]));
 			  } 
 		  }
 	  });
-
+	  
 	  pluginWorkspaceAccess.addViewComponentCustomizer(new ViewComponentCustomizer() {
 		  /**
 		   * @see ro.sync.exml.workspace.api.standalone.ViewComponentCustomizer#customizeView(ro.sync.exml.workspace.api.standalone.ViewInfo)
@@ -202,6 +207,15 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		  }
 	  }); 
   }
+  
+ @SuppressWarnings({ "unused", "serial" })
+private AbstractAction createNewShowSelectionAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
+	 return new AbstractAction("ANOTHER ACTION") {
+		 public void actionPerformed(ActionEvent actionEvent) {
+			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+		}
+	 };
+ }
 
 	/**
 	 * Create the Swing action which shows the current selection.
@@ -246,7 +260,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
 						  } else {
 							  // No selection
-							  pluginWorkspaceAccess.showInformationMessage("No selection available.");
+							  pluginWorkspaceAccess.showInformationMessage("NOTHING SELECTED.");
 						  }
 					  }
 				  }
