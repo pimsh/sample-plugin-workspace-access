@@ -210,10 +210,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
  @SuppressWarnings({ "unused", "serial" })
 private AbstractAction createNewShowSelectionAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	 return new AbstractAction("ANOTHER ACTION") {
+	 return new AbstractAction("action2") {
 		 public void actionPerformed(ActionEvent actionEvent) {
 			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-		}
+			 WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+			 pluginWorkspaceAccess.showInformationMessage(String.valueOf(textPage.getCaretOffset()));
+		 }
 	 };
  }
 
@@ -226,7 +228,7 @@ private AbstractAction createNewShowSelectionAction(final StandalonePluginWorksp
 	@SuppressWarnings("serial")
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
-		return new AbstractAction("HELLO") {
+		return new AbstractAction("action1") {
 			  public void actionPerformed(ActionEvent actionevent) {
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
@@ -258,7 +260,7 @@ private AbstractAction createNewShowSelectionAction(final StandalonePluginWorksp
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-							  pluginWorkspaceAccess.showStatusMessage(ACTION_COMMAND_KEY);
+							  //pluginWorkspaceAccess.showInformationMessage(String.valueOf(textPage.getCaretOffset()));
 						  } else {
 							  // No selection
 							  pluginWorkspaceAccess.showInformationMessage("NOTHING SELECTED.");
