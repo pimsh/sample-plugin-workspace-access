@@ -2,6 +2,10 @@ package com.oxygenxml.sdksamples.workspace;
 
 import java.awt.event.ActionEvent;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +18,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
+
+import com.google.common.io.Files;
 
 import ro.sync.ecss.extensions.api.AuthorAccess;
 import ro.sync.ecss.extensions.api.AuthorDocumentController;
@@ -214,7 +220,14 @@ private AbstractAction createNewShowSelectionAction(final StandalonePluginWorksp
 		 public void actionPerformed(ActionEvent actionEvent) {
 			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 			 WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
-			 pluginWorkspaceAccess.showInformationMessage(String.valueOf(textPage.getCaretOffset()));
+			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(textPage.getCaretOffset()));
+			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getDocumentTypeInformation()));
+			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getCurrentPage()));
+			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getEditorLocation()));
+			 String date = String.valueOf(LocalDateTime.now());
+			 pluginWorkspaceAccess.showInformationMessage(date + " " + String.valueOf(editorAccess.getEditorLocation()));
+			 
+			 Path copied = Paths.get(String.valueOf(editorAccess.getEditorLocation()));
 		 }
 	 };
  }
