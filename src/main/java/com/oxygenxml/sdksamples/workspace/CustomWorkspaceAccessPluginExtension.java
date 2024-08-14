@@ -1,7 +1,14 @@
 package com.oxygenxml.sdksamples.workspace;
 
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -42,6 +49,7 @@ import ro.sync.exml.workspace.api.standalone.ui.ToolbarButton;
 /**
  * Plugin extension - workspace access extension.
  */
+
 public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPluginExtension {
   /**
    * The custom messages area. A sample component added to your custom view.
@@ -60,7 +68,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
-	final Action anotherAction = createNewShowSelectionAction(pluginWorkspaceAccess);
+	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	//Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
 				/**
@@ -215,7 +223,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   }
   
  @SuppressWarnings({ "unused", "serial" })
-private AbstractAction createNewShowSelectionAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
+private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
 	 return new AbstractAction("action2") {
 		 public void actionPerformed(ActionEvent actionEvent) {
 			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
@@ -227,10 +235,44 @@ private AbstractAction createNewShowSelectionAction(final StandalonePluginWorksp
 			 String date = String.valueOf(LocalDateTime.now());
 			 pluginWorkspaceAccess.showInformationMessage(date + " " + String.valueOf(editorAccess.getEditorLocation()));
 			 
-			 Path copied = Paths.get(String.valueOf(editorAccess.getEditorLocation()));
+			 //editorAccess.save();
+			 String path = String.valueOf(editorAccess.getEditorLocation());
+			 File file = new File(path);
+			 //URL file = new File(path).toURI().toURL();
+			 //pluginWorkspaceAccess.showInformationMessage(file.getAbsolutePath());
+			 //pluginWorkspaceAccess.showInformationMessage(path + " " + file.getAbsolutePath());
+			 pluginWorkspaceAccess.showInformationMessage(path + " " + file.getPath());
+			 
+			 //Path copied = Paths.get(String.valueOf(editorAccess.getEditorLocation()));
+			 
+			 try {
+				copyFileUsingChannel(file, new File(file.getPath()));
+				
+			} catch (IOException e) {
+				pluginWorkspaceAccess.showInformationMessage("DOESN'T WORK.");
+				e.printStackTrace();
+			}
 		 }
 	 };
  }
+ 
+ 
+ private static void copyFileUsingChannel(File source, File dest) throws IOException {
+	    FileChannel sourceChannel = null;
+	    FileChannel destChannel = null;
+	    try {
+
+	        sourceChannel = new FileInputStream(source).getChannel();
+	        
+	        //thwack renaming in here
+	        
+	        destChannel = new FileOutputStream(dest).getChannel();
+	        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
+	       }finally{
+	           sourceChannel.close();
+	           destChannel.close();
+	   }
+	}
 
 	/**
 	 * Create the Swing action which shows the current selection.
