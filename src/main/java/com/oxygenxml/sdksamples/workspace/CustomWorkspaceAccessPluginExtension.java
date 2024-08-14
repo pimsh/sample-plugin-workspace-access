@@ -258,6 +258,7 @@ private AbstractAction createNewShowSelectionAction(final StandalonePluginWorksp
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+							  pluginWorkspaceAccess.showStatusMessage(ACTION_COMMAND_KEY);
 						  } else {
 							  // No selection
 							  pluginWorkspaceAccess.showInformationMessage("NOTHING SELECTED.");
