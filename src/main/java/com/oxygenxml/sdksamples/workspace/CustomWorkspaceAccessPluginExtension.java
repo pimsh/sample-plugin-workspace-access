@@ -16,6 +16,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
@@ -73,6 +74,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
+	
+	// collecting all the found files and showing them in an infomessage
+	Collection<File> allStylesheets = new ArrayList<File>();
+    addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
+    pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
+    
 	//Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
 				/**
@@ -228,15 +235,19 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
  @SuppressWarnings({ "unused", "serial" })
 private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	 return new AbstractAction("action2") {
+	 return new AbstractAction("backup + read") {
 		 public void actionPerformed(ActionEvent actionEvent) {
 			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 			 WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+			 
+			 // getting a date for the rename
 			 String date = getDate();
 			 
-			 //editorAccess.save();
+			 // editorAccess.save();
+			 //current path where the file sits
 			 String path = String.valueOf(editorAccess.getEditorLocation());
 			 
+			 // cutting off the "file:" (oxygen does that) from the path
 			 File file1 = new File(path.substring(6, path.length()));
 			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
 			 
@@ -249,7 +260,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				pluginWorkspaceAccess.showInformationMessage("DOESN'T WORK.");
 				e.printStackTrace();
 			}
-			 
+			
+			// reading the first line of the copy cuz why not
 	        Scanner sc;
 			try {
 				sc = new Scanner(file1);
@@ -258,11 +270,22 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				pluginWorkspaceAccess.showInformationMessage("NO FILE TO COPY.");
 				e.printStackTrace();
 			}
-
 		 }
 	 };
  }
  
+ // adding the files from the folder to an array
+	static void addTree(File file, Collection<File> all) {
+	    File[] children = file.listFiles();
+	    if (children != null) {
+	        for (File child : children) {
+	            all.add(child);
+	            addTree(child, all);
+	        }
+	    }
+	}
+ 
+// getting a date WITHOUT COLONS (which are a problem here for some reason)
  private static String getDate() {
 	 String pattern = "dd-MM-yyyy-hh-mm-ss";
 	 SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
@@ -270,6 +293,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	 return date;
 }
  
+ // copying a file, rename is in the path
  private static void copyFileUsingChannel(File source, File dest) throws IOException {
 	    FileChannel sourceChannel = null;
 	    FileChannel destChannel = null;
