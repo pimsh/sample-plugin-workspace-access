@@ -95,7 +95,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     	//pluginWorkspaceAccess.showInformationMessage(number + ". " + currentFile.getName());
     	
     	// creating an action from the stylesheet
-    	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName());
+    	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName(), currentFile);
     	
     	// adding it to an array of action (to thwack them all into a dropdown later)
     	allActions.add(newAction);
@@ -105,7 +105,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     
     while(iterator2.hasNext()) {
     	Action currentAction = iterator2.next();
-    	pluginWorkspaceAccess.showInformationMessage(String.valueOf(currentAction));
+    	//pluginWorkspaceAccess.showInformationMessage(String.valueOf(currentAction));
     }
     
 	//Mount the action on the contextual menus for the Text and Author modes.
@@ -124,12 +124,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				public void customizeTextPopUpMenu(JPopupMenu popup,
 						WSTextEditorPage textPage) {
 					// Add our custom action
-				    java.util.Iterator<Action> iterator3 = allActions.iterator();
-				    
-				    while(iterator3.hasNext()) {
-				    	Action currentAction = iterator3.next();
-				    	popup.add(currentAction);
-				    }
+//				    java.util.Iterator<Action> iterator3 = allActions.iterator();
+//				    
+//				    while(iterator3.hasNext()) {
+//				    	Action currentAction = iterator3.next();
+//				    	popup.add(currentAction);
+//				    }
 					popup.add(selectionSourceAction);
 					popup.add(anotherAction);
 				}
@@ -356,19 +356,24 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	 */
 	@SuppressWarnings("serial")
 	
-	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName) {
-		pluginWorkspaceAccess.showInformationMessage(actionName + " " + actionNumber + " created");
+	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName, File actionFile) {
+		//pluginWorkspaceAccess.showInformationMessage(actionName + " " + actionNumber + " created");
 		return new AbstractAction(actionNumber + ". " + actionName) {
-			
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked");
-				
+				//pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked");
+				Scanner sc;
+				try {
+					sc = new Scanner(actionFile);
+			        pluginWorkspaceAccess.showInformationMessage(sc.next());
+				} catch (FileNotFoundException ex) {
+					pluginWorkspaceAccess.showInformationMessage("NO FILE TO COPY.");
+					ex.printStackTrace();
+				}
 			}
 		};
-		
-		
+			
 	}
 	
 	private AbstractAction createShowSelectionAction(
