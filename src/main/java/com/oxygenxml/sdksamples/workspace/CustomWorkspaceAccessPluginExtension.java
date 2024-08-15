@@ -3,6 +3,7 @@ package com.oxygenxml.sdksamples.workspace;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,9 +13,12 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -228,34 +232,43 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		 public void actionPerformed(ActionEvent actionEvent) {
 			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 			 WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
-			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(textPage.getCaretOffset()));
-			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getDocumentTypeInformation()));
-			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getCurrentPage()));
-			 //pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getEditorLocation()));
-			 String date = String.valueOf(LocalDateTime.now());
-			 pluginWorkspaceAccess.showInformationMessage(date + " " + String.valueOf(editorAccess.getEditorLocation()));
+			 String date = getDate();
 			 
 			 //editorAccess.save();
 			 String path = String.valueOf(editorAccess.getEditorLocation());
-			 File file = new File(path);
-			 //URL file = new File(path).toURI().toURL();
-			 //pluginWorkspaceAccess.showInformationMessage(file.getAbsolutePath());
-			 //pluginWorkspaceAccess.showInformationMessage(path + " " + file.getAbsolutePath());
-			 pluginWorkspaceAccess.showInformationMessage(path + " " + file.getPath());
 			 
-			 //Path copied = Paths.get(String.valueOf(editorAccess.getEditorLocation()));
+			 File file1 = new File(path.substring(6, path.length()));
+			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
+			 
+			 pluginWorkspaceAccess.showInformationMessage(file1.getPath() + " " + file2.getPath());
 			 
 			 try {
-				copyFileUsingChannel(file, new File(file.getPath()));
+				copyFileUsingChannel(file1, file2);
 				
 			} catch (IOException e) {
 				pluginWorkspaceAccess.showInformationMessage("DOESN'T WORK.");
 				e.printStackTrace();
 			}
+			 
+	        Scanner sc;
+			try {
+				sc = new Scanner(file1);
+		        pluginWorkspaceAccess.showInformationMessage(sc.next());
+			} catch (FileNotFoundException e) {
+				pluginWorkspaceAccess.showInformationMessage("NO FILE TO COPY.");
+				e.printStackTrace();
+			}
+
 		 }
 	 };
  }
  
+ private static String getDate() {
+	 String pattern = "dd-MM-yyyy-hh-mm-ss";
+	 SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+	 String date = simpleDateFormat.format(new Date());
+	 return date;
+}
  
  private static void copyFileUsingChannel(File source, File dest) throws IOException {
 	    FileChannel sourceChannel = null;
@@ -263,9 +276,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	    try {
 
 	        sourceChannel = new FileInputStream(source).getChannel();
-	        
-	        //thwack renaming in here
-	        
 	        destChannel = new FileOutputStream(dest).getChannel();
 	        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
 	       }finally{
@@ -315,7 +325,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-							  //pluginWorkspaceAccess.showInformationMessage(String.valueOf(textPage.getCaretOffset()));
 						  } else {
 							  // No selection
 							  pluginWorkspaceAccess.showInformationMessage("NOTHING SELECTED.");
