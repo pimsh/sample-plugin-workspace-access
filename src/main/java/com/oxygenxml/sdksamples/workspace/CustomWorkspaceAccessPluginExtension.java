@@ -32,6 +32,7 @@ import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
 
 import com.google.common.io.Files;
+import com.ibm.icu.text.Edits.Iterator;
 
 import ro.sync.ecss.extensions.api.AuthorAccess;
 import ro.sync.ecss.extensions.api.AuthorDocumentController;
@@ -78,7 +79,34 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	// collecting all the found files and showing them in an infomessage
 	Collection<File> allStylesheets = new ArrayList<File>();
     addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
-    pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
+    java.util.Iterator<File> iterator1 = allStylesheets.iterator();
+    //pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
+    
+    // a collection of all actions built from the allStylesheets
+    Collection<Action> allActions = new ArrayList<Action>();
+    
+    
+    int number = 0;
+    while (iterator1.hasNext())
+    {	
+    	// the current stylesheet loaded in to create an action
+    	File currentFile = iterator1.next();
+    	number += 1;
+    	//pluginWorkspaceAccess.showInformationMessage(number + ". " + currentFile.getName());
+    	
+    	// creating an action from the stylesheet
+    	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName());
+    	
+    	// adding it to an array of action (to thwack them all into a dropdown later)
+    	allActions.add(newAction);
+    }
+    
+    java.util.Iterator<Action> iterator2 = allActions.iterator();
+    
+    while(iterator2.hasNext()) {
+    	Action currentAction = iterator2.next();
+    	pluginWorkspaceAccess.showInformationMessage(String.valueOf(currentAction));
+    }
     
 	//Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
@@ -96,6 +124,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				public void customizeTextPopUpMenu(JPopupMenu popup,
 						WSTextEditorPage textPage) {
 					// Add our custom action
+				    java.util.Iterator<Action> iterator3 = allActions.iterator();
+				    
+				    while(iterator3.hasNext()) {
+				    	Action currentAction = iterator3.next();
+				    	popup.add(currentAction);
+				    }
 					popup.add(selectionSourceAction);
 					popup.add(anotherAction);
 				}
@@ -113,6 +147,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //			  mainMenuBar.add(myFirstMenu, mainMenuBar.getMenuCount() - 2);
 			  
 			  JMenu mySecondMenu = new JMenu("Menu2");
+			  java.util.Iterator<Action> iterator3 = allActions.iterator();
+			    
+			    while(iterator3.hasNext()) {
+			    	Action currentAction = iterator3.next();
+			    	mySecondMenu.add(currentAction);
+			    }
 			  mySecondMenu.add(selectionSourceAction);
 			  mySecondMenu.add(anotherAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
@@ -315,6 +355,22 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	 * @return The "HELLO" action
 	 */
 	@SuppressWarnings("serial")
+	
+	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName) {
+		pluginWorkspaceAccess.showInformationMessage(actionName + " " + actionNumber + " created");
+		return new AbstractAction(actionNumber + ". " + actionName) {
+			
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked");
+				
+			}
+		};
+		
+		
+	}
+	
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
 		return new AbstractAction("action1") {
