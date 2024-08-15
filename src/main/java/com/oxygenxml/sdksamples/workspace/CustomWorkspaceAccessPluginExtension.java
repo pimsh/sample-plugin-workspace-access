@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import javax.swing.AbstractAction;
@@ -30,18 +31,52 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.text.BadLocationException;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+
+import org.xml.sax.XMLReader;
 
 import com.google.common.io.Files;
 import com.ibm.icu.text.Edits.Iterator;
 
+import ro.sync.ecss.component.AuthorClipboardObject;
+import ro.sync.ecss.extensions.api.ArgumentDescriptor;
+import ro.sync.ecss.extensions.api.ArgumentsMap;
 import ro.sync.ecss.extensions.api.AuthorAccess;
+import ro.sync.ecss.extensions.api.AuthorAccessDeprecated;
+import ro.sync.ecss.extensions.api.AuthorChangeTrackingController;
+import ro.sync.ecss.extensions.api.AuthorClipboardAccess;
+import ro.sync.ecss.extensions.api.AuthorConstants;
 import ro.sync.ecss.extensions.api.AuthorDocumentController;
+import ro.sync.ecss.extensions.api.AuthorListener;
+import ro.sync.ecss.extensions.api.AuthorOperation;
+import ro.sync.ecss.extensions.api.AuthorOperationException;
+import ro.sync.ecss.extensions.api.AuthorResourceBundle;
+import ro.sync.ecss.extensions.api.AuthorReviewController;
+import ro.sync.ecss.extensions.api.AuthorViewToModelInfo;
+import ro.sync.ecss.extensions.api.ClassPathResourcesAccess;
+import ro.sync.ecss.extensions.api.OptionsStorage;
+import ro.sync.ecss.extensions.api.access.AuthorEditorAccess;
+import ro.sync.ecss.extensions.api.access.AuthorOutlineAccess;
+import ro.sync.ecss.extensions.api.access.AuthorTableAccess;
+import ro.sync.ecss.extensions.api.access.AuthorUtilAccess;
+import ro.sync.ecss.extensions.api.access.AuthorWorkspaceAccess;
+import ro.sync.ecss.extensions.api.access.AuthorXMLUtilAccess;
+import ro.sync.ecss.extensions.api.node.AttrValue;
 import ro.sync.ecss.extensions.api.node.AuthorDocumentFragment;
+import ro.sync.ecss.extensions.api.node.AuthorElement;
+import ro.sync.ecss.extensions.api.node.AuthorNode;
+import ro.sync.ecss.extensions.commons.operations.TransformOperation;
+import ro.sync.ecss.extensions.commons.operations.XSLTOperation;
 import ro.sync.exml.editor.EditorPageConstants;
 import ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension;
 import ro.sync.exml.workspace.api.editor.WSEditor;
 import ro.sync.exml.workspace.api.editor.page.author.WSAuthorEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.WSTextEditorPage;
+import ro.sync.exml.workspace.api.editor.transformation.TransformationFeedback;
+import ro.sync.exml.workspace.api.editor.transformation.TransformationScenarioInvoker;
+import ro.sync.exml.workspace.api.editor.transformation.TransformationScenarioNotFoundException;
 import ro.sync.exml.workspace.api.listeners.WSEditorChangeListener;
 import ro.sync.exml.workspace.api.standalone.MenuBarCustomizer;
 import ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace;
@@ -153,8 +188,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			    	Action currentAction = iterator3.next();
 			    	mySecondMenu.add(currentAction);
 			    }
-			  mySecondMenu.add(selectionSourceAction);
-			  mySecondMenu.add(anotherAction);
+			  //mySecondMenu.add(selectionSourceAction);
+			  //mySecondMenu.add(anotherAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
 	  });
@@ -362,16 +397,48 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				//pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked");
 				Scanner sc;
+				StringBuilder sb = new StringBuilder();
 				try {
 					sc = new Scanner(actionFile);
-			        pluginWorkspaceAccess.showInformationMessage(sc.next());
+					pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked - " + sc.next());
+//			        for (int i = 0; i < 3; i++) {
+//			        	//sb.append(sc.next());
+//			        	pluginWorkspaceAccess.showInformationMessage(sc.next());
+//					}
+			        //pluginWorkspaceAccess.showInformationMessage(sb.toString());
 				} catch (FileNotFoundException ex) {
-					pluginWorkspaceAccess.showInformationMessage("NO FILE TO COPY.");
+					pluginWorkspaceAccess.showInformationMessage("NO FILE THERE.");
 					ex.printStackTrace();
 				}
+				
+				Source source = new Source() {
+					
+					@Override
+					public void setSystemId(String systemId) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+					@Override
+					public String getSystemId() {
+						// TODO Auto-generated method stub
+						return null;
+					}
+				};
+				XSLTOperation op = new XSLTOperation();
+				
+				try {
+					pluginWorkspaceAccess.showInformationMessage("TRYIN 1.");
+					op.createTransformer(null, source);
+					pluginWorkspaceAccess.showInformationMessage("TRYIN 2.");
+				} catch (TransformerConfigurationException e1) {
+					pluginWorkspaceAccess.showInformationMessage("DOESN'T WORK.");
+					e1.printStackTrace();
+				}
 			}
+			
+				
 		};
 			
 	}
@@ -419,7 +486,17 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			  }
 		  };
 	}
-  
+	
+	public class XSLTOperation extends TransformOperation {
+
+		@Override
+		protected Transformer createTransformer(ro.sync.ecss.extensions.api.AuthorAccess authorAccess, Source scriptSrc)
+				throws TransformerConfigurationException {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+	}
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
