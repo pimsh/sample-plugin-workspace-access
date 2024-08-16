@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
+import javax.management.loading.PrivateClassLoader;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.JComponent;
@@ -40,6 +41,7 @@ import org.xml.sax.XMLReader;
 import com.google.common.io.Files;
 import com.ibm.icu.text.Edits.Iterator;
 
+import ro.sync.basic.io.FilePathToURI;
 import ro.sync.ecss.component.AuthorClipboardObject;
 import ro.sync.ecss.extensions.api.ArgumentDescriptor;
 import ro.sync.ecss.extensions.api.ArgumentsMap;
@@ -63,10 +65,12 @@ import ro.sync.ecss.extensions.api.access.AuthorTableAccess;
 import ro.sync.ecss.extensions.api.access.AuthorUtilAccess;
 import ro.sync.ecss.extensions.api.access.AuthorWorkspaceAccess;
 import ro.sync.ecss.extensions.api.access.AuthorXMLUtilAccess;
+import ro.sync.ecss.extensions.api.highlights.Highlight;
 import ro.sync.ecss.extensions.api.node.AttrValue;
 import ro.sync.ecss.extensions.api.node.AuthorDocumentFragment;
 import ro.sync.ecss.extensions.api.node.AuthorElement;
 import ro.sync.ecss.extensions.api.node.AuthorNode;
+import ro.sync.ecss.extensions.api.structure.AuthorPopupMenuCustomizer;
 import ro.sync.ecss.extensions.commons.operations.TransformOperation;
 import ro.sync.ecss.extensions.commons.operations.XSLTOperation;
 import ro.sync.exml.editor.EditorPageConstants;
@@ -96,7 +100,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * The custom messages area. A sample component added to your custom view.
    */
   private JTextArea customMessagesArea;
-
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
@@ -108,40 +111,64 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
+
+	  
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	
 	// collecting all the found files and showing them in an infomessage
 	Collection<File> allStylesheets = new ArrayList<File>();
     addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
+    
+    // an iterator to loop through the FILES collection
     java.util.Iterator<File> iterator1 = allStylesheets.iterator();
     //pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
+    //pluginWorkspaceAccess.showInformationMessage(FilePathToURI.filepath2URI(iterator1.next().getPath()));
     
-    // a collection of all actions built from the allStylesheets
+    // a collection for the ACTIONS to be made of the files collection
     Collection<Action> allActions = new ArrayList<Action>();
     
-    
+    // loopin through files collection adding them as actions to the actions collection
     int number = 0;
     while (iterator1.hasNext())
     {	
     	// the current stylesheet loaded in to create an action
     	File currentFile = iterator1.next();
+    	
+    	// class for Source
+    	class CurrentSource implements javax.xml.transform.Source {
+    		String id = new String();
+			@Override
+			public void setSystemId(String systemId) {
+				id = systemId;
+			}
+
+			@Override
+			public String getSystemId() {
+				return id;
+			}
+    	}
+    	
+    	// tryna make a source for the thing
+    	CurrentSource currentSource = new CurrentSource();
+    	currentSource.setSystemId(currentFile.getPath());
+    	
     	number += 1;
     	//pluginWorkspaceAccess.showInformationMessage(number + ". " + currentFile.getName());
     	
-    	// creating an action from the stylesheet
-    	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName(), currentFile);
+    	// creating an action from the file while also loading it in as both a file and a source
+    	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName(), currentFile, currentSource);
     	
-    	// adding it to an array of action (to thwack them all into a dropdown later)
+    	// adding it to an array of actions (to thwack them all into a dropdown later)
     	allActions.add(newAction);
     }
     
-    java.util.Iterator<Action> iterator2 = allActions.iterator();
-    
-    while(iterator2.hasNext()) {
-    	Action currentAction = iterator2.next();
-    	//pluginWorkspaceAccess.showInformationMessage(String.valueOf(currentAction));
-    }
+//    java.util.Iterator<Action> iterator2 = allActions.iterator();
+//    
+//    while(iterator2.hasNext()) {
+//    	Action currentAction = iterator2.next();
+//    	//pluginWorkspaceAccess.showInformationMessage(String.valueOf(currentAction));
+//    }
     
 	//Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
@@ -151,6 +178,10 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				@Override
 				public void customizeAuthorPopUpMenu(JPopupMenu popup,
 						AuthorAccess authorAccess) {
+					
+					// banana
+					pluginWorkspaceAccess.showInformationMessage("before gettin the url");
+					URL editorURL = authorAccess.getEditorAccess().getEditorLocation();
 					// Add our custom action
 					popup.add(selectionSourceAction);
 				}
@@ -182,8 +213,11 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //			  mainMenuBar.add(myFirstMenu, mainMenuBar.getMenuCount() - 2);
 			  
 			  JMenu mySecondMenu = new JMenu("Menu2");
+			  
+			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
 			    
+			  // loopin through the actions collection adding them to the dropdown
 			    while(iterator3.hasNext()) {
 			    	Action currentAction = iterator3.next();
 			    	mySecondMenu.add(currentAction);
@@ -308,6 +342,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  }); 
   }
   
+  
+  // making a backup right next to the document with a date (up to seconds) in its name
  @SuppressWarnings({ "unused", "serial" })
 private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
 	 return new AbstractAction("backup + read") {
@@ -349,7 +385,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	 };
  }
  
- // adding the files from the folder to an array
+ // adding ALL the files from the folder to an array
 	static void addTree(File file, Collection<File> all) {
 	    File[] children = file.listFiles();
 	    if (children != null) {
@@ -390,18 +426,21 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	 * @return The "HELLO" action
 	 */
 	@SuppressWarnings("serial")
-	
-	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName, File actionFile) {
+	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName, File actionFile, javax.xml.transform.Source actionSource) {
 		//pluginWorkspaceAccess.showInformationMessage(actionName + " " + actionNumber + " created");
 		return new AbstractAction(actionNumber + ". " + actionName) {
-			
+			XSLTOperation operation = new XSLTOperation();
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				
+				// can read from the file attached to the action
 				Scanner sc;
 				StringBuilder sb = new StringBuilder();
 				try {
 					sc = new Scanner(actionFile);
-					pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked - " + sc.next());
+					//pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked - " + sc.next());
+					//pluginWorkspaceAccess.showInformationMessage(actionSource.getSystemId());
+					
 //			        for (int i = 0; i < 3; i++) {
 //			        	//sb.append(sc.next());
 //			        	pluginWorkspaceAccess.showInformationMessage(sc.next());
@@ -412,35 +451,25 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					ex.printStackTrace();
 				}
 				
-				Source source = new Source() {
-					
-					@Override
-					public void setSystemId(String systemId) {
-						// TODO Auto-generated method stub
-						
-					}
-					
-					@Override
-					public String getSystemId() {
-						// TODO Auto-generated method stub
-						return null;
-					}
-				};
-				XSLTOperation op = new XSLTOperation();
-				
 				try {
 					pluginWorkspaceAccess.showInformationMessage("TRYIN 1.");
-					op.createTransformer(null, source);
+					operation.doOperation(null, null);
 					pluginWorkspaceAccess.showInformationMessage("TRYIN 2.");
-				} catch (TransformerConfigurationException e1) {
-					pluginWorkspaceAccess.showInformationMessage("DOESN'T WORK.");
+				} catch (AuthorOperationException e1) {
+					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
 			
-				
+			public void doTheThing (AuthorAccess authorAccess) {
+				try {
+					operation.doOperation(authorAccess, null);
+				} catch (AuthorOperationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 		};
-			
 	}
 	
 	private AbstractAction createShowSelectionAction(
@@ -449,6 +478,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			  public void actionPerformed(ActionEvent actionevent) {
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+				  
 				  // The action is available only in Author mode.
 				  if(editorAccess != null){
 					  if (EditorPageConstants.PAGE_AUTHOR.equals(editorAccess.getCurrentPageID())) {
@@ -476,7 +506,14 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					  } else if (EditorPageConstants.PAGE_TEXT.equals(editorAccess.getCurrentPageID())) {
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  if (textPage.hasSelection()) {
-							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText() + editorAccess.getContentType());
+							  
+							  try {
+								editorAccess.runTransformationScenario("TEST", null, null);
+							} catch (TransformationScenarioNotFoundException e) {
+								pluginWorkspaceAccess.showInformationMessage("get fucked");
+								e.printStackTrace();
+							}
 						  } else {
 							  // No selection
 							  pluginWorkspaceAccess.showInformationMessage("NOTHING SELECTED.");
@@ -487,16 +524,28 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		  };
 	}
 	
-	public class XSLTOperation extends TransformOperation {
-
-		@Override
-		protected Transformer createTransformer(ro.sync.ecss.extensions.api.AuthorAccess authorAccess, Source scriptSrc)
-				throws TransformerConfigurationException {
-			// TODO Auto-generated method stub
-			return null;
-		}
-		
-	}
+//	class ApplyReplacementMenuCustomizerForAuthor implements AuthorPopupMenuCustomizer {
+//	    public void customizePopUpMenu(Object popUp, AuthorAccess authorAccess) {
+//	      Highlight[] highlights = authorAccess.getEditorAccess().getHighlighter().getHighlights();
+//	      int caretOffset = authorAccess.getEditorAccess().getCaretOffset();
+//	      for (Highlight highlight : highlights) {
+//	        if (caretOffset >= highlight.getStartOffset() && caretOffset <= highlight.getEndOffset()) {
+//	          RuleMatch match = (RuleMatch) highlight.getAdditionalData();
+//	          replaceMenuItems((JPopupMenu) popUp, match, new AuthorModeApplyReplacementAction(match, authorAccess));
+//	          break;
+//	        }
+//	      }
+//	    }
+//	  }
+	
+//	@Override
+//	protected Transformer createTransformer(AuthorAccess authorAccess, Source scriptSrc)
+//			throws TransformerConfigurationException {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+	
+	
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
@@ -504,4 +553,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	  //You can reject the application closing here
     return true;
   }
+
+
+
 }
