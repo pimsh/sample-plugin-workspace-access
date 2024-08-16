@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
@@ -35,6 +37,9 @@ import javax.swing.text.BadLocationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.xml.sax.XMLReader;
 
@@ -42,6 +47,7 @@ import com.google.common.io.Files;
 import com.ibm.icu.text.Edits.Iterator;
 
 import ro.sync.basic.io.FilePathToURI;
+import ro.sync.basic.util.URLUtil;
 import ro.sync.ecss.component.AuthorClipboardObject;
 import ro.sync.ecss.extensions.api.ArgumentDescriptor;
 import ro.sync.ecss.extensions.api.ArgumentsMap;
@@ -71,6 +77,10 @@ import ro.sync.ecss.extensions.api.node.AuthorDocumentFragment;
 import ro.sync.ecss.extensions.api.node.AuthorElement;
 import ro.sync.ecss.extensions.api.node.AuthorNode;
 import ro.sync.ecss.extensions.api.structure.AuthorPopupMenuCustomizer;
+import ro.sync.ecss.extensions.api.webapp.AuthorDocumentModel;
+import ro.sync.ecss.extensions.api.webapp.AuthorOperationWithResult;
+import ro.sync.ecss.extensions.commons.operations.DeleteElementOperation;
+import ro.sync.ecss.extensions.commons.operations.MoveCaretOperation;
 import ro.sync.ecss.extensions.commons.operations.TransformOperation;
 import ro.sync.ecss.extensions.commons.operations.XSLTOperation;
 import ro.sync.exml.editor.EditorPageConstants;
@@ -90,13 +100,15 @@ import ro.sync.exml.workspace.api.standalone.ViewComponentCustomizer;
 import ro.sync.exml.workspace.api.standalone.ViewInfo;
 import ro.sync.exml.workspace.api.standalone.actions.MenusAndToolbarsContributorCustomizer;
 import ro.sync.exml.workspace.api.standalone.ui.ToolbarButton;
+import ro.sync.exml.workspace.api.util.XMLUtilAccess;
 
 /**
  * Plugin extension - workspace access extension.
  */
 
 public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPluginExtension {
-  /**
+  protected static final DeleteElementOperation DeleteElementOperation = null;
+/**
    * The custom messages area. A sample component added to your custom view.
    */
   private JTextArea customMessagesArea;
@@ -469,13 +481,15 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					e.printStackTrace();
 				}
 			}
+			
 		};
 	}
 	
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
 		return new AbstractAction("action1") {
-			  public void actionPerformed(ActionEvent actionevent) {
+			
+			public void actionPerformed(ActionEvent actionevent) {
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				  
@@ -507,7 +521,15 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText() + editorAccess.getContentType());
-							  
+							  InsertFragmentOperationBIG insertFragmentOperationBIG = new InsertFragmentOperationBIG();
+							  XSLTReportOperation report = new XSLTReportOperation();
+							  try {
+								insertFragmentOperationBIG.doOperation(null, null);
+								report.doOperation(null, null);
+							} catch (AuthorOperationException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 							  try {
 								editorAccess.runTransformationScenario("TEST", null, null);
 							} catch (TransformationScenarioNotFoundException e) {
@@ -523,6 +545,88 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			  }
 		  };
 	}
+	
+	 
+
+	  /**
+
+	   * @see ro.sync.ecss.extensions.api.AuthorOperation#doOperation(ro.sync.ecss.extensions.api.AuthorAccess, ro.sync.ecss.extensions.api.ArgumentsMap)
+
+	   */
+
+	  public void doOperation(AuthorAccess authorAccess, ArgumentsMap args)
+
+	      throws IllegalArgumentException, AuthorOperationException { 
+
+	    int caretOffset = authorAccess.getEditorAccess().getCaretOffset();
+
+	    try {
+
+	      AuthorNode nodeAtOffset = authorAccess.getDocumentController().getNodeAtOffset(caretOffset);
+
+	      AttrValue attribute = ((AuthorElement) nodeAtOffset).getAttribute("href");
+
+	      
+
+	      if (attribute != null) {
+
+	        String hrefValue = attribute.getValue();
+
+	        URL absoluteValue = null;
+
+	        try {
+
+	          absoluteValue = new URL(hrefValue);
+
+	        } catch (MalformedURLException e) {
+
+	          try {
+
+	            absoluteValue = new URL(authorAccess.getEditorAccess().getEditorLocation(), hrefValue);
+
+	          } catch (MalformedURLException e1) {
+
+	            e1.printStackTrace();
+
+	          } 
+
+	        }
+
+	        if (absoluteValue != null) {
+
+	          // If inkscape is associated with SVG files in the OS you could try:
+
+	          authorAccess.getWorkspaceAccess().openInExternalApplication(absoluteValue, true);
+
+	          // Otherwise build the command line to invoke inkscape something like:
+
+	          String[] cmdarray = new String[] {"inkscape", absoluteValue.getFile()};
+
+	          try {
+
+	            Runtime.getRuntime().exec(cmdarray);
+
+	          } catch (IOException e) {
+
+	            // TODO Auto-generated catch block
+
+	            e.printStackTrace();
+
+	          }
+
+	        }
+
+	      }
+
+	    } catch (BadLocationException e) {
+
+	      e.printStackTrace();
+
+	    }
+
+	  }
+	  
+
 	
 //	class ApplyReplacementMenuCustomizerForAuthor implements AuthorPopupMenuCustomizer {
 //	    public void customizePopUpMenu(Object popUp, AuthorAccess authorAccess) {
@@ -546,6 +650,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //	}
 	
 	
+	
+	
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
@@ -553,7 +659,80 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	  //You can reject the application closing here
     return true;
   }
+  public class InsertFragmentOperationBIG extends ro.sync.ecss.extensions.commons.operations.InsertFragmentOperation{
 
+	  /**
+	   * The user name editor variable.
+	   */
+	  private static final String USER_NAME_VARIABLE = "${user.name}";
 
+	  @Override
+	  public void doOperation(AuthorAccess authorAccess, ArgumentsMap args) throws AuthorOperationException {
+	    super.doOperation(authorAccess, argumentName -> {
+	      if (ARGUMENT_FRAGMENT.equals(argumentName)) {
+	        //String fragment = (String) args.getArgumentValue(argumentName);
+	        String fragment = "WAWAWA";
+	        String userName = authorAccess.getReviewController().getReviewerAuthorName();
+	        return fragment.replace(USER_NAME_VARIABLE, userName);
+	      }
+	      
+	      return args.getArgumentValue(argumentName);
+	    });
+	  }
+	}
+  
+  
+  public class XSLTReportOperation extends AuthorOperationWithResult {
 
-}
+	  
+	  @Override
+	  public String doOperation(AuthorDocumentModel model, ArgumentsMap args)
+	      throws AuthorOperationException {
+	    
+	    AuthorAccess authorAccess = model.getAuthorAccess();
+	    
+	    Source xslSrc = new SAXSource(new org.xml.sax.InputSource(getScriptLocation(args)));
+	    Transformer transformer;
+	    try {
+	      transformer = authorAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0], 
+	          XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
+	    } catch (TransformerConfigurationException e) {
+	      throw new IllegalStateException(e);
+	    }
+	    
+	    AuthorEditorAccess editorAccess = authorAccess.getEditorAccess();
+	    Reader docReader = editorAccess.createContentReader();
+	    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
+	    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
+	    Source xmlSrc = new SAXSource(is);
+	    StringWriter sw = new StringWriter();
+	    
+	    try {
+	      transformer.transform(xmlSrc, new StreamResult(sw ));
+	    } catch (TransformerException e) {
+	      return "FAILURE";
+	    }
+	    
+	    return sw.toString();
+	  }
+
+	  private String getScriptLocation(ArgumentsMap args) {
+	    String scriptLocation = (String) args.getArgumentValue("script");
+	    File script = new File(XSLTReportPlugin.baseDir, scriptLocation);
+	    try {
+	      if (contains(XSLTReportPlugin.baseDir, script)) {
+	        return URLUtil.correct(script).toExternalForm();
+	      }
+	    } catch (IOException e) {
+	      throw new IllegalArgumentException("The 'script' file is not located in the plugin's folder.", e);
+	    }
+	    return null;
+	  }
+
+	  private boolean contains(File folder, File file) throws IOException {
+	    return file.getCanonicalPath().startsWith(folder.getCanonicalPath() + File.separator);
+	  }
+
+	}
+
+	}
