@@ -523,8 +523,18 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							e.printStackTrace();
 						}
 						  
-						pluginWorkspaceAccess.showInformationMessage(sw.toString());
+						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
 						try {
+							pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
+						} catch (BadLocationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						try {
+							int length = textPage.getDocument().getLength();
+							textPage.select(0, length);
+//							textPage.getDocument().getText(0, textPage.getDocument().getLength());
+							textPage.deleteSelection();
 							textPage.getDocument().insertString(0, sw.toString(), null);
 						} catch (BadLocationException e) {
 							// TODO Auto-generated catch block
