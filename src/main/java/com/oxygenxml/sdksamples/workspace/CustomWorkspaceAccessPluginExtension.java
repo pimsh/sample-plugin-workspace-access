@@ -96,6 +96,8 @@ import ro.sync.exml.workspace.api.editor.page.author.WSAuthorEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.WSTextEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.xml.TextDocumentController;
 import ro.sync.exml.workspace.api.editor.page.text.xml.TextOperationException;
+import ro.sync.exml.workspace.api.editor.page.text.xml.WSXMLTextEditorPage;
+import ro.sync.exml.workspace.api.editor.page.text.xml.XPathException;
 import ro.sync.exml.workspace.api.editor.transformation.TransformationFeedback;
 import ro.sync.exml.workspace.api.editor.transformation.TransformationScenarioInvoker;
 import ro.sync.exml.workspace.api.editor.transformation.TransformationScenarioNotFoundException;
@@ -443,15 +445,12 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	 */
 	@SuppressWarnings("serial")
 	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName, File actionFile, javax.xml.transform.Source actionSource) {
-		//pluginWorkspaceAccess.showInformationMessage(actionName + " " + actionNumber + " created");
 		return new AbstractAction(actionNumber + ". " + actionName) {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				pluginWorkspaceAccess.showInformationMessage(actionFile.getAbsolutePath().replace("\\", "/") + " " + actionFile.getPath().replace("\\", "/"));
 				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 				Source xslSrc = new SAXSource(new org.xml.sax.InputSource(actionFile.getPath().replace("\\", "/")));
-//				Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
 				Reader docReader = editorAccess.createContentReader();
 			    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
 			    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
@@ -481,42 +480,50 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				  // get the textpage, main thingy
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
-						  // loading the stylesheet as a source
-						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
-						  // grabbing a reader (Create a reader over the whole editor's content (exactly the XML content which gets saved on disk). The unsaved changes are 								included.)
-						    Reader docReader = editorAccess.createContentReader();
-						    // something about it being a saxon thing now
-						    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
-						    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
-						    Source xmlSrc = new SAXSource(is);
-						    StringWriter sw = new StringWriter();
-						    
+						  WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 						  try {
-							  // transformation itself
-							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
-							// results are being put into a StringWriter
-							transformer1.transform(xmlSrc, new StreamResult(sw));
-						} catch (TransformerConfigurationException e) {
-							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-							e.printStackTrace();
-						} catch (TransformerException e) {
-							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-							e.printStackTrace();
-						}
-//						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
-//						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
-						try {
-							int length = textPage.getDocument().getLength();
-							textPage.select(0, length);
-							textPage.deleteSelection();
-							textPage.getDocument().insertString(0, sw.toString(), null);
-						} catch (BadLocationException e) {
+							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
+						} catch (XPathException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						  if (textPage.hasSelection()) {
-							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-							  }
+						  
+						  // loading the stylesheet as a source
+//						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
+//						  // grabbing a reader (Create a reader over the whole editor's content (exactly the XML content which gets saved on disk). The unsaved changes are 								included.)
+//						    Reader docReader = editorAccess.createContentReader();
+//						    // something about it being a saxon thing now
+//						    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
+//						    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
+//						    Source xmlSrc = new SAXSource(is);
+//						    StringWriter sw = new StringWriter();
+//						    
+//						  try {
+//							  // transformation itself
+//							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+//							// results are being put into a StringWriter
+//							transformer1.transform(xmlSrc, new StreamResult(sw));
+//						} catch (TransformerConfigurationException e) {
+//							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+//							e.printStackTrace();
+//						} catch (TransformerException e) {
+//							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+//							e.printStackTrace();
+//						}
+////						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
+////						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
+//						try {
+//							int length = textPage.getDocument().getLength();
+//							textPage.select(0, length);
+//							textPage.deleteSelection();
+//							textPage.getDocument().insertString(0, sw.toString(), null);
+//						} catch (BadLocationException e) {
+//							// TODO Auto-generated catch block
+//							e.printStackTrace();
+//						}
+//						  if (textPage.hasSelection()) {
+//							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+//							  }
 						  } 
 		  };
 	}
