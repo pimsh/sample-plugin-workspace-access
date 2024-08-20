@@ -49,6 +49,7 @@ import com.ibm.icu.text.Edits.Iterator;
 
 import ro.sync.basic.io.FilePathToURI;
 import ro.sync.basic.util.URLUtil;
+import ro.sync.document.DocumentPositionedInfo;
 import ro.sync.ecss.component.AuthorClipboardObject;
 import ro.sync.ecss.extensions.api.ArgumentDescriptor;
 import ro.sync.ecss.extensions.api.ArgumentsMap;
@@ -90,6 +91,7 @@ import ro.sync.exml.editor.xmleditor.operations.context.RelativeInsertPosition;
 import ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension;
 import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 import ro.sync.exml.workspace.api.editor.WSEditor;
+import ro.sync.exml.workspace.api.editor.page.WSTextBasedEditorPage;
 import ro.sync.exml.workspace.api.editor.page.author.WSAuthorEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.WSTextEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.xml.TextDocumentController;
@@ -497,16 +499,47 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 								  pluginWorkspaceAccess.showErrorMessage("Show Selection Source operation failed: " + e.getMessage());
 							  }
 							  
-							  
 						  } else {
 							  // No selection
 							  pluginWorkspaceAccess.showInformationMessage("No selection available.");
 						  }
 					  } else if (EditorPageConstants.PAGE_TEXT.equals(editorAccess.getCurrentPageID())) {
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
-						  pluginWorkspaceAccess.showInformationMessage("caret offset " + String.valueOf(textPage.getCaretOffset()));
-						  int[] caretOffset = textPage.getWordAtCaret();
-						  pluginWorkspaceAccess.showInformationMessage("caret at the start of the word " + String.valueOf(caretOffset[0]));
+						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
+						    Reader docReader = editorAccess.createContentReader();
+						    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
+						    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
+						    Source xmlSrc = new SAXSource(is);
+						    StringWriter sw = new StringWriter();
+						    
+						  try {
+							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+							transformer1.transform(xmlSrc, new StreamResult(sw));
+						} catch (TransformerConfigurationException e) {
+							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+							e.printStackTrace();
+						} catch (TransformerException e) {
+							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+							e.printStackTrace();
+						}
+						  
+						pluginWorkspaceAccess.showInformationMessage(sw.toString());
+						try {
+							textPage.getDocument().insertString(0, sw.toString(), null);
+						} catch (BadLocationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+//						  DocumentPositionedInfo docInfo = new DocumentPositionedInfo(0);
+//						  List<DocumentPositionedInfo> resultsList = new ArrayList<DocumentPositionedInfo>();
+//						  resultsList.set(0, null);
+//						  resultsList.set(1, docInfo);
+//						    pluginWorkspaceAccess.getResultsManager().setResults("wawa", resultsList, null);
+//						  pluginWorkspaceAccess.showInformationMessage(String.valueOf(docInfo.getData()));
+//						  pluginWorkspaceAccess.showInformationMessage("caret offset " + String.valueOf(textPage.getCaretOffset()));
+//						  int[] caretOffset = textPage.getWordAtCaret();
+//						  pluginWorkspaceAccess.showInformationMessage("start - " + String.valueOf(caretOffset[0]) + " end - " + String.valueOf(caretOffset[1]));
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
 							  }
@@ -528,22 +561,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
     return true;
   }
   
-  public class MyTextDocumentController implements TextDocumentController {
-
-	@Override
-	public void insertXMLFragment(String xmlFragment, String xpathLocation, RelativeInsertPosition relativePosition)
-			throws TextOperationException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void insertXMLFragment(String xmlFragment, int caretOffset) throws TextOperationException {
-		// TODO Auto-generated method stub
-		
-	}
-	  
-  }
   public class InsertFragmentOperationBIG extends ro.sync.ecss.extensions.commons.operations.InsertFragmentOperation{
 
 	  /**
