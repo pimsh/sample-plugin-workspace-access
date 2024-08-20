@@ -203,7 +203,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 					//pluginWorkspaceAccess.showInformationMessage("before gettin the url");
 					URL editorURL = authorAccess.getEditorAccess().getEditorLocation();
 					// Add our custom action
-					popup.add(selectionSourceAction);
+//					popup.add(selectionSourceAction);
 				}
 
 				@Override
@@ -216,8 +216,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //				    	Action currentAction = iterator3.next();
 //				    	popup.add(currentAction);
 //				    }
-					popup.add(selectionSourceAction);
-					popup.add(anotherAction);
+//					popup.add(selectionSourceAction);
+//					popup.add(anotherAction);
 					
 				}
 			});
@@ -248,7 +248,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
 	  });
-
 
 	  pluginWorkspaceAccess.addEditorChangeListener(
 			  new WSEditorChangeListener() {
@@ -314,7 +313,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			  }, 
 			  StandalonePluginWorkspace.MAIN_EDITING_AREA);
 
-
 	  //You can use this callback to populate your custom toolbar (defined in the plugin.xml) or to modify an existing Oxygen toolbar 
 	  // (add components to it or remove them) 
 	  pluginWorkspaceAccess.addToolbarComponentsCustomizer(new ToolbarComponentsCustomizer() {
@@ -377,7 +375,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			 // editorAccess.save();
 			 //current path where the file sits
 			 String path = String.valueOf(editorAccess.getEditorLocation());
-			 
 			 // cutting off the "file:" (oxygen does that) from the path
 			 File file1 = new File(path.substring(6, path.length()));
 			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
@@ -448,25 +445,29 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	private AbstractAction createNewAction(final StandalonePluginWorkspace pluginWorkspaceAccess, int actionNumber, String actionName, File actionFile, javax.xml.transform.Source actionSource) {
 		//pluginWorkspaceAccess.showInformationMessage(actionName + " " + actionNumber + " created");
 		return new AbstractAction(actionNumber + ". " + actionName) {
-			XSLTOperation operation = new XSLTOperation();
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// can read from the file attached to the action
-				Scanner sc;
-				StringBuilder sb = new StringBuilder();
+				pluginWorkspaceAccess.showInformationMessage(actionFile.getAbsolutePath().replace("\\", "/") + " " + actionFile.getPath().replace("\\", "/"));
+				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+				WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+				Source xslSrc = new SAXSource(new org.xml.sax.InputSource(actionFile.getPath().replace("\\", "/")));
+//				Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
+				Reader docReader = editorAccess.createContentReader();
+			    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
+			    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
+			    Source xmlSrc = new SAXSource(is);
+			    StringWriter sw = new StringWriter();
+			    
 				try {
-					sc = new Scanner(actionFile);
-					pluginWorkspaceAccess.showInformationMessage("action " + actionNumber + " - " + sc.next());
-					//pluginWorkspaceAccess.showInformationMessage(actionSource.getSystemId());
-					
-//			        for (int i = 0; i < 3; i++) {
-//			        	//sb.append(sc.next());
-//			        	pluginWorkspaceAccess.showInformationMessage(sc.next());
-//					}
-			        //pluginWorkspaceAccess.showInformationMessage(sb.toString());
-				} catch (FileNotFoundException ex) {
-					pluginWorkspaceAccess.showInformationMessage("NO FILE THERE.");
-					ex.printStackTrace();
+					@SuppressWarnings("deprecation")
+					Transformer transformer = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
+					transformer.transform(xmlSrc, new StreamResult(sw));
+					int length = textPage.getDocument().getLength();
+					textPage.select(0, length);
+					textPage.deleteSelection();
+					textPage.getDocument().insertString(0, sw.toString(), null);
+				} catch (TransformerException | BadLocationException ex) {
+					pluginWorkspaceAccess.showInformationMessage(ex.getMessage());
 				}
 			}
 		};
@@ -478,42 +479,22 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			public void actionPerformed(ActionEvent actionevent) {
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-				  // The action is available only in Author mode.
-				  if(editorAccess != null){
-					  if (EditorPageConstants.PAGE_AUTHOR.equals(editorAccess.getCurrentPageID())) {
-						  WSAuthorEditorPage authorPageAccess = (WSAuthorEditorPage) editorAccess.getCurrentPage();
-						  AuthorDocumentController controller = authorPageAccess.getDocumentController();
-						  if (authorPageAccess.hasSelection()) {
-							  AuthorDocumentFragment selectionFragment;
-							  try {
-								  // Create fragment from selection
-								  selectionFragment = controller.createDocumentFragment(
-										  authorPageAccess.getSelectionStart(),
-										  authorPageAccess.getSelectionEnd() - 1
-										  );
-								  // Serialize
-								  String serializeFragmentToXML = controller.serializeFragmentToXML(selectionFragment);
-								  // Show fragment
-								  pluginWorkspaceAccess.showInformationMessage(serializeFragmentToXML);
-							  } catch (BadLocationException e) {
-								  pluginWorkspaceAccess.showErrorMessage("Show Selection Source operation failed: " + e.getMessage());
-							  }
-							  
-						  } else {
-							  // No selection
-							  pluginWorkspaceAccess.showInformationMessage("No selection available.");
-						  }
-					  } else if (EditorPageConstants.PAGE_TEXT.equals(editorAccess.getCurrentPageID())) {
+				  // get the textpage, main thingy
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+						  // loading the stylesheet as a source
 						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
+						  // grabbing a reader (Create a reader over the whole editor's content (exactly the XML content which gets saved on disk). The unsaved changes are 								included.)
 						    Reader docReader = editorAccess.createContentReader();
+						    // something about it being a saxon thing now
 						    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
 						    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
 						    Source xmlSrc = new SAXSource(is);
 						    StringWriter sw = new StringWriter();
 						    
 						  try {
+							  // transformation itself
 							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+							// results are being put into a StringWriter
 							transformer1.transform(xmlSrc, new StreamResult(sw));
 						} catch (TransformerConfigurationException e) {
 							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
@@ -522,44 +503,21 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 							e.printStackTrace();
 						}
-						  
-						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
-						try {
-							pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
-						} catch (BadLocationException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
+//						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
+//						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
 						try {
 							int length = textPage.getDocument().getLength();
 							textPage.select(0, length);
-//							textPage.getDocument().getText(0, textPage.getDocument().getLength());
 							textPage.deleteSelection();
 							textPage.getDocument().insertString(0, sw.toString(), null);
 						} catch (BadLocationException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						
-//						  DocumentPositionedInfo docInfo = new DocumentPositionedInfo(0);
-//						  List<DocumentPositionedInfo> resultsList = new ArrayList<DocumentPositionedInfo>();
-//						  resultsList.set(0, null);
-//						  resultsList.set(1, docInfo);
-//						    pluginWorkspaceAccess.getResultsManager().setResults("wawa", resultsList, null);
-//						  pluginWorkspaceAccess.showInformationMessage(String.valueOf(docInfo.getData()));
-//						  pluginWorkspaceAccess.showInformationMessage("caret offset " + String.valueOf(textPage.getCaretOffset()));
-//						  int[] caretOffset = textPage.getWordAtCaret();
-//						  pluginWorkspaceAccess.showInformationMessage("start - " + String.valueOf(caretOffset[0]) + " end - " + String.valueOf(caretOffset[1]));
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
 							  }
-						  else {
-							  // No selection
-							  pluginWorkspaceAccess.showInformationMessage("NOTHINGNESS.");
-						  }
 						  } 
-					  }
-				  }
 		  };
 	}
 	
@@ -570,29 +528,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	  //You can reject the application closing here
     return true;
   }
-  
-  public class InsertFragmentOperationBIG extends ro.sync.ecss.extensions.commons.operations.InsertFragmentOperation{
-
-	  /**
-	   * The user name editor variable.
-	   */
-	  private static final String USER_NAME_VARIABLE = "${user.name}";
-
-	  @Override
-	  public void doOperation(AuthorAccess authorAccess, ArgumentsMap args) throws AuthorOperationException {
-	    super.doOperation(authorAccess, argumentName -> {
-	    	authorAccess.getEditorAccess().close(false);
-	      if (ARGUMENT_FRAGMENT.equals(argumentName)) {
-	        //String fragment = (String) args.getArgumentValue(argumentName);
-	        String fragment = "WAWAWA";
-	        String userName = authorAccess.getReviewController().getReviewerAuthorName();
-	        return fragment.replace(USER_NAME_VARIABLE, userName);
-	      }
-	      
-	      return args.getArgumentValue(argumentName);
-	    });
-	  }
-	}
   
   public class XSLTReportOperation extends AuthorOperationWithResult {
 	  
