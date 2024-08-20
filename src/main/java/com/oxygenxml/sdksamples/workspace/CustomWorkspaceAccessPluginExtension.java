@@ -15,6 +15,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.rmi.server.Operation;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -84,10 +85,15 @@ import ro.sync.ecss.extensions.commons.operations.MoveCaretOperation;
 import ro.sync.ecss.extensions.commons.operations.TransformOperation;
 import ro.sync.ecss.extensions.commons.operations.XSLTOperation;
 import ro.sync.exml.editor.EditorPageConstants;
+import ro.sync.exml.editor.state.CaretStateInfo;
+import ro.sync.exml.editor.xmleditor.operations.context.RelativeInsertPosition;
 import ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension;
+import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 import ro.sync.exml.workspace.api.editor.WSEditor;
 import ro.sync.exml.workspace.api.editor.page.author.WSAuthorEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.WSTextEditorPage;
+import ro.sync.exml.workspace.api.editor.page.text.xml.TextDocumentController;
+import ro.sync.exml.workspace.api.editor.page.text.xml.TextOperationException;
 import ro.sync.exml.workspace.api.editor.transformation.TransformationFeedback;
 import ro.sync.exml.workspace.api.editor.transformation.TransformationScenarioInvoker;
 import ro.sync.exml.workspace.api.editor.transformation.TransformationScenarioNotFoundException;
@@ -192,7 +198,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 						AuthorAccess authorAccess) {
 					
 					// banana
-					pluginWorkspaceAccess.showInformationMessage("before gettin the url");
+					//pluginWorkspaceAccess.showInformationMessage("before gettin the url");
 					URL editorURL = authorAccess.getEditorAccess().getEditorLocation();
 					// Add our custom action
 					popup.add(selectionSourceAction);
@@ -210,6 +216,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //				    }
 					popup.add(selectionSourceAction);
 					popup.add(anotherAction);
+					
 				}
 			});
 
@@ -354,7 +361,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  }); 
   }
   
-  
   // making a backup right next to the document with a date (up to seconds) in its name
  @SuppressWarnings({ "unused", "serial" })
 private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
@@ -374,7 +380,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			 File file1 = new File(path.substring(6, path.length()));
 			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
 			 
-			 pluginWorkspaceAccess.showInformationMessage(file1.getPath() + " " + file2.getPath());
+//			 pluginWorkspaceAccess.showInformationMessage(file1.getPath() + " " + file2.getPath());
 			 
 			 try {
 				copyFileUsingChannel(file1, file2);
@@ -388,16 +394,16 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        Scanner sc;
 			try {
 				sc = new Scanner(file1);
-		        pluginWorkspaceAccess.showInformationMessage(sc.next());
+//		        pluginWorkspaceAccess.showInformationMessage(sc.next());
 			} catch (FileNotFoundException e) {
-				pluginWorkspaceAccess.showInformationMessage("NO FILE TO COPY.");
+//				pluginWorkspaceAccess.showInformationMessage("NO FILE TO READ.");
 				e.printStackTrace();
 			}
 		 }
 	 };
  }
  
- // adding ALL the files from the folder to an array
+// adding ALL the files from the folder to an array
 	static void addTree(File file, Collection<File> all) {
 	    File[] children = file.listFiles();
 	    if (children != null) {
@@ -409,19 +415,18 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	}
  
 // getting a date WITHOUT COLONS (which are a problem here for some reason)
- private static String getDate() {
+	private static String getDate() {
 	 String pattern = "dd-MM-yyyy-hh-mm-ss";
 	 SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
 	 String date = simpleDateFormat.format(new Date());
 	 return date;
 }
  
- // copying a file, rename is in the path
- private static void copyFileUsingChannel(File source, File dest) throws IOException {
+// copying a file, rename is in the path
+	private static void copyFileUsingChannel(File source, File dest) throws IOException {
 	    FileChannel sourceChannel = null;
 	    FileChannel destChannel = null;
 	    try {
-
 	        sourceChannel = new FileInputStream(source).getChannel();
 	        destChannel = new FileOutputStream(dest).getChannel();
 	        destChannel.transferFrom(sourceChannel, 0, sourceChannel.size());
@@ -444,13 +449,12 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			XSLTOperation operation = new XSLTOperation();
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				
 				// can read from the file attached to the action
 				Scanner sc;
 				StringBuilder sb = new StringBuilder();
 				try {
 					sc = new Scanner(actionFile);
-					//pluginWorkspaceAccess.showInformationMessage("action" + actionNumber + " clicked - " + sc.next());
+					pluginWorkspaceAccess.showInformationMessage("action " + actionNumber + " - " + sc.next());
 					//pluginWorkspaceAccess.showInformationMessage(actionSource.getSystemId());
 					
 //			        for (int i = 0; i < 3; i++) {
@@ -462,37 +466,16 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					pluginWorkspaceAccess.showInformationMessage("NO FILE THERE.");
 					ex.printStackTrace();
 				}
-				
-				try {
-					pluginWorkspaceAccess.showInformationMessage("TRYIN 1.");
-					operation.doOperation(null, null);
-					pluginWorkspaceAccess.showInformationMessage("TRYIN 2.");
-				} catch (AuthorOperationException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
 			}
-			
-			public void doTheThing (AuthorAccess authorAccess) {
-				try {
-					operation.doOperation(authorAccess, null);
-				} catch (AuthorOperationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
 		};
 	}
 	
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
 		return new AbstractAction("action1") {
-			
 			public void actionPerformed(ActionEvent actionevent) {
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-				  
 				  // The action is available only in Author mode.
 				  if(editorAccess != null){
 					  if (EditorPageConstants.PAGE_AUTHOR.equals(editorAccess.getCurrentPageID())) {
@@ -513,144 +496,29 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							  } catch (BadLocationException e) {
 								  pluginWorkspaceAccess.showErrorMessage("Show Selection Source operation failed: " + e.getMessage());
 							  }
+							  
+							  
 						  } else {
 							  // No selection
 							  pluginWorkspaceAccess.showInformationMessage("No selection available.");
 						  }
 					  } else if (EditorPageConstants.PAGE_TEXT.equals(editorAccess.getCurrentPageID())) {
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+						  pluginWorkspaceAccess.showInformationMessage("caret offset " + String.valueOf(textPage.getCaretOffset()));
+						  int[] caretOffset = textPage.getWordAtCaret();
+						  pluginWorkspaceAccess.showInformationMessage("caret at the start of the word " + String.valueOf(caretOffset[0]));
 						  if (textPage.hasSelection()) {
-							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText() + editorAccess.getContentType());
-							  InsertFragmentOperationBIG insertFragmentOperationBIG = new InsertFragmentOperationBIG();
-							  XSLTReportOperation report = new XSLTReportOperation();
-							  try {
-								insertFragmentOperationBIG.doOperation(null, null);
-								report.doOperation(null, null);
-							} catch (AuthorOperationException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							  try {
-								editorAccess.runTransformationScenario("TEST", null, null);
-							} catch (TransformationScenarioNotFoundException e) {
-								pluginWorkspaceAccess.showInformationMessage("get fucked");
-								e.printStackTrace();
-							}
-						  } else {
+							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+							  }
+						  else {
 							  // No selection
-							  pluginWorkspaceAccess.showInformationMessage("NOTHING SELECTED.");
+							  pluginWorkspaceAccess.showInformationMessage("NOTHINGNESS.");
 						  }
+						  } 
 					  }
 				  }
-			  }
 		  };
 	}
-	
-	 
-
-	  /**
-
-	   * @see ro.sync.ecss.extensions.api.AuthorOperation#doOperation(ro.sync.ecss.extensions.api.AuthorAccess, ro.sync.ecss.extensions.api.ArgumentsMap)
-
-	   */
-
-	  public void doOperation(AuthorAccess authorAccess, ArgumentsMap args)
-
-	      throws IllegalArgumentException, AuthorOperationException { 
-
-	    int caretOffset = authorAccess.getEditorAccess().getCaretOffset();
-
-	    try {
-
-	      AuthorNode nodeAtOffset = authorAccess.getDocumentController().getNodeAtOffset(caretOffset);
-
-	      AttrValue attribute = ((AuthorElement) nodeAtOffset).getAttribute("href");
-
-	      
-
-	      if (attribute != null) {
-
-	        String hrefValue = attribute.getValue();
-
-	        URL absoluteValue = null;
-
-	        try {
-
-	          absoluteValue = new URL(hrefValue);
-
-	        } catch (MalformedURLException e) {
-
-	          try {
-
-	            absoluteValue = new URL(authorAccess.getEditorAccess().getEditorLocation(), hrefValue);
-
-	          } catch (MalformedURLException e1) {
-
-	            e1.printStackTrace();
-
-	          } 
-
-	        }
-
-	        if (absoluteValue != null) {
-
-	          // If inkscape is associated with SVG files in the OS you could try:
-
-	          authorAccess.getWorkspaceAccess().openInExternalApplication(absoluteValue, true);
-
-	          // Otherwise build the command line to invoke inkscape something like:
-
-	          String[] cmdarray = new String[] {"inkscape", absoluteValue.getFile()};
-
-	          try {
-
-	            Runtime.getRuntime().exec(cmdarray);
-
-	          } catch (IOException e) {
-
-	            // TODO Auto-generated catch block
-
-	            e.printStackTrace();
-
-	          }
-
-	        }
-
-	      }
-
-	    } catch (BadLocationException e) {
-
-	      e.printStackTrace();
-
-	    }
-
-	  }
-	  
-
-	
-//	class ApplyReplacementMenuCustomizerForAuthor implements AuthorPopupMenuCustomizer {
-//	    public void customizePopUpMenu(Object popUp, AuthorAccess authorAccess) {
-//	      Highlight[] highlights = authorAccess.getEditorAccess().getHighlighter().getHighlights();
-//	      int caretOffset = authorAccess.getEditorAccess().getCaretOffset();
-//	      for (Highlight highlight : highlights) {
-//	        if (caretOffset >= highlight.getStartOffset() && caretOffset <= highlight.getEndOffset()) {
-//	          RuleMatch match = (RuleMatch) highlight.getAdditionalData();
-//	          replaceMenuItems((JPopupMenu) popUp, match, new AuthorModeApplyReplacementAction(match, authorAccess));
-//	          break;
-//	        }
-//	      }
-//	    }
-//	  }
-	
-//	@Override
-//	protected Transformer createTransformer(AuthorAccess authorAccess, Source scriptSrc)
-//			throws TransformerConfigurationException {
-//		// TODO Auto-generated method stub
-//		return null;
-//	}
-	
-	
-	
 	
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
@@ -658,6 +526,23 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
   public boolean applicationClosing() {
 	  //You can reject the application closing here
     return true;
+  }
+  
+  public class MyTextDocumentController implements TextDocumentController {
+
+	@Override
+	public void insertXMLFragment(String xmlFragment, String xpathLocation, RelativeInsertPosition relativePosition)
+			throws TextOperationException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void insertXMLFragment(String xmlFragment, int caretOffset) throws TextOperationException {
+		// TODO Auto-generated method stub
+		
+	}
+	  
   }
   public class InsertFragmentOperationBIG extends ro.sync.ecss.extensions.commons.operations.InsertFragmentOperation{
 
@@ -669,6 +554,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	  @Override
 	  public void doOperation(AuthorAccess authorAccess, ArgumentsMap args) throws AuthorOperationException {
 	    super.doOperation(authorAccess, argumentName -> {
+	    	authorAccess.getEditorAccess().close(false);
 	      if (ARGUMENT_FRAGMENT.equals(argumentName)) {
 	        //String fragment = (String) args.getArgumentValue(argumentName);
 	        String fragment = "WAWAWA";
@@ -681,21 +567,19 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	  }
 	}
   
-  
   public class XSLTReportOperation extends AuthorOperationWithResult {
-
 	  
 	  @Override
 	  public String doOperation(AuthorDocumentModel model, ArgumentsMap args)
 	      throws AuthorOperationException {
 	    
 	    AuthorAccess authorAccess = model.getAuthorAccess();
-	    
-	    Source xslSrc = new SAXSource(new org.xml.sax.InputSource(getScriptLocation(args)));
+	    //Source xslSrc = new SAXSource(new org.xml.sax.InputSource(getScriptLocation(args)));
+	    Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
 	    Transformer transformer;
 	    try {
 	      transformer = authorAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0], 
-	          XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
+	          XMLUtilAccess.TRANSFORMER_SAXON_6); //TRANSFORMER_SAXON_PROFESSIONAL_EDITION
 	    } catch (TransformerConfigurationException e) {
 	      throw new IllegalStateException(e);
 	    }
