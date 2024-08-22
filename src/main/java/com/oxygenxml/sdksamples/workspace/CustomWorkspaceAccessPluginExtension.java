@@ -495,17 +495,19 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						  WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 						  TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
 						  
-						  // this, for some reason, returns the current thing the caret is sitting on
+						  Node currentNode = null;
 						  try {
 							  // only one element in there
+							// this, for some reason, returns the current thing the caret is sitting on
 							Object [] nodes = xmltextPage.evaluateXPath(".");
 //							Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
 //							Object [] nodes = xmltextPage.evaluateXPath(stringThere);
 //							Object [] allNodes = xmltextPage.evaluateXPath("//node()");
+							
 								if(nodes.length > 0) {
 									// we just cast an object as a node and it works
-									Node currentNode = (Node) nodes[0];
-									pluginWorkspaceAccess.showInformationMessage(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+									currentNode = (Node) nodes[0];
+									pluginWorkspaceAccess.showInformationMessage("action1 " + currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
 //									pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 								}
 //							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
@@ -513,9 +515,11 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						  
-						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess);
+						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode);
 						  thingWindow.popItUp();
+						  
+//						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess);
+//						  thingWindow.popItUp();
 						  
 						  // loading the stylesheet as a source
 //						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
@@ -567,10 +571,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
     
 	public class ThingWindow {
 		StandalonePluginWorkspace pluginWorkspaceAccess;
-		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess) {
+		Node node;
+		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+			this.node = node;
 		}
 		public void popItUp(){
+			pluginWorkspaceAccess.showInformationMessage("window " + node.toString());
 			frame = new JFrame("Test");
 	        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	        panel = new JPanel();
@@ -606,12 +613,14 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.setVisible(true);
 	        frame.setResizable(false);
 	        input.requestFocus();
+	        output.setText(node.toString());
 		}
 	};
 	
 	public static class ButtonListener implements ActionListener
     {	
 		StandalonePluginWorkspace pluginWorkspaceAccess;
+		
 		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 		}
@@ -639,6 +648,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
 //							pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 							output.append("\n");
+							
 						}
 //					pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
 				} catch (XPathException e) {
@@ -654,6 +664,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
             input.setText("");
             input.requestFocus();
         }
+		
     }
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
