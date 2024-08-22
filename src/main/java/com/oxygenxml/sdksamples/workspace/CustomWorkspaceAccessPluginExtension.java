@@ -1,6 +1,10 @@
 package com.oxygenxml.sdksamples.workspace;
 
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -28,13 +32,20 @@ import java.util.Scanner;
 import javax.management.loading.PrivateClassLoader;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -119,7 +130,6 @@ import ro.sync.exml.workspace.api.util.XMLUtilAccess;
  */
 
 public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPluginExtension {
-  protected static final DeleteElementOperation DeleteElementOperation = null;
 /**
    * The custom messages area. A sample component added to your custom view.
    */
@@ -474,22 +484,71 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		};
 	}
 	
+	private static String ENTER = "Enter";
+    static JButton enterButton;
+    public static JTextArea output;
+    public static JTextField input;
+    static JFrame frame;
+    static JPanel panel;
+    public static String testString = "test";
+	
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
 		return new AbstractAction("action1") {
 			public void actionPerformed(ActionEvent actionevent) {
+				
+				frame = new JFrame("Test");
+		        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		        panel = new JPanel();
+		        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		        panel.setOpaque(true);
+		        ButtonListener buttonListener = new ButtonListener();
+		        output = new JTextArea(15, 50);
+		        output.setWrapStyleWord(true);
+		        output.setEditable(false);
+		        JScrollPane scroller = new JScrollPane(output);
+		        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		        JPanel inputpanel = new JPanel();
+		        inputpanel.setLayout(new FlowLayout());
+		        input = new JTextField(20);
+		        enterButton = new JButton("Enter");
+		        enterButton.setActionCommand(ENTER);
+		        enterButton.addActionListener(buttonListener);
+		        // enterButton.setEnabled(false);
+		        input.setActionCommand(ENTER);
+		        input.addActionListener(buttonListener);
+		        DefaultCaret caret = (DefaultCaret) output.getCaret();
+		        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		        panel.add(scroller);
+		        inputpanel.add(input);
+		        inputpanel.add(enterButton);
+		        panel.add(inputpanel);
+		        frame.getContentPane().add(BorderLayout.CENTER, panel);
+		        frame.pack();
+		        frame.setLocationByPlatform(true);
+		        // Center of screen
+		        // frame.setLocationRelativeTo(null);
+		        frame.setVisible(true);
+		        frame.setResizable(false);
+		        input.requestFocus();
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-				  // get the textpage, main thingy
+				  // get the textpages and stuff
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 						  TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
 						  
+						  // this, for some reason, returns the current thing the caret is sitting on
 						  try {
-							Object [] nodes = xmltextPage.evaluateXPath(".");
+							  // only one element in there
+//							Object [] nodes = xmltextPage.evaluateXPath(".");
+							Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
+//							Object [] allNodes = xmltextPage.evaluateXPath("//node()");
 								if(nodes.length > 0) {
+									// we just cast an object as a node and it works
 									Node currentNode = (Node) nodes[0];
-									pluginWorkspaceAccess.showInformationMessage(currentNode.toString());
+									pluginWorkspaceAccess.showInformationMessage(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
 //									pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 								}
 //							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
@@ -538,6 +597,26 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		  };
 	}
 	
+	public static class ButtonListener implements ActionListener
+    {
+
+        public void actionPerformed(final ActionEvent ev)
+        {
+            if (!input.getText().trim().equals(""))
+            {
+                String cmd = ev.getActionCommand();
+                if (ENTER.equals(cmd))
+                {
+                    output.append(input.getText());
+                    if (input.getText().trim().equals(testString)) output.append(" = " + testString);
+                    else output.append(" != " + testString);
+                    output.append("\n");
+                }
+            }
+            input.setText("");
+            input.requestFocus();
+        }
+    }
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
