@@ -42,10 +42,12 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.w3c.dom.Node;
 import org.xml.sax.XMLReader;
 
 import com.google.common.io.Files;
 import com.ibm.icu.text.Edits.Iterator;
+import com.oxygenxml.editor.swtutil.td;
 
 import ro.sync.basic.io.FilePathToURI;
 import ro.sync.basic.util.URLUtil;
@@ -481,8 +483,16 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				  // get the textpage, main thingy
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+						  TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
+						  
 						  try {
-							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
+							Object [] nodes = xmltextPage.evaluateXPath(".");
+								if(nodes.length > 0) {
+									Node currentNode = (Node) nodes[0];
+									pluginWorkspaceAccess.showInformationMessage(currentNode.toString());
+//									pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
+								}
+//							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
 						} catch (XPathException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
