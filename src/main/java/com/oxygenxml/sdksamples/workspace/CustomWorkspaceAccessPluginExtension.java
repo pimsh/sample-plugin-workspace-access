@@ -146,7 +146,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
 
-	  
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	
@@ -484,54 +483,11 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		};
 	}
 	
-	private static String ENTER = "Enter";
-    static JButton enterButton;
-    public static JTextArea output;
-    public static JTextField input;
-    static JFrame frame;
-    static JPanel panel;
-    public static String testString = "test";
-	
 	private AbstractAction createShowSelectionAction(
 			final StandalonePluginWorkspace pluginWorkspaceAccess) {
 		return new AbstractAction("action1") {
+
 			public void actionPerformed(ActionEvent actionevent) {
-				
-				frame = new JFrame("Test");
-		        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		        panel = new JPanel();
-		        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		        panel.setOpaque(true);
-		        ButtonListener buttonListener = new ButtonListener();
-		        output = new JTextArea(15, 50);
-		        output.setWrapStyleWord(true);
-		        output.setEditable(false);
-		        JScrollPane scroller = new JScrollPane(output);
-		        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-		        JPanel inputpanel = new JPanel();
-		        inputpanel.setLayout(new FlowLayout());
-		        input = new JTextField(20);
-		        enterButton = new JButton("Enter");
-		        enterButton.setActionCommand(ENTER);
-		        enterButton.addActionListener(buttonListener);
-		        // enterButton.setEnabled(false);
-		        input.setActionCommand(ENTER);
-		        input.addActionListener(buttonListener);
-		        DefaultCaret caret = (DefaultCaret) output.getCaret();
-		        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-		        panel.add(scroller);
-		        inputpanel.add(input);
-		        inputpanel.add(enterButton);
-		        panel.add(inputpanel);
-		        frame.getContentPane().add(BorderLayout.CENTER, panel);
-		        frame.pack();
-		        frame.setLocationByPlatform(true);
-		        // Center of screen
-		        // frame.setLocationRelativeTo(null);
-		        frame.setVisible(true);
-		        frame.setResizable(false);
-		        input.requestFocus();
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				  // get the textpages and stuff
@@ -542,8 +498,9 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						  // this, for some reason, returns the current thing the caret is sitting on
 						  try {
 							  // only one element in there
-//							Object [] nodes = xmltextPage.evaluateXPath(".");
-							Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
+							Object [] nodes = xmltextPage.evaluateXPath(".");
+//							Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
+//							Object [] nodes = xmltextPage.evaluateXPath(stringThere);
 //							Object [] allNodes = xmltextPage.evaluateXPath("//node()");
 								if(nodes.length > 0) {
 									// we just cast an object as a node and it works
@@ -556,6 +513,9 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
+						  
+						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess);
+						  thingWindow.popItUp();
 						  
 						  // loading the stylesheet as a source
 //						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
@@ -597,19 +557,97 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		  };
 	}
 	
+	private static String ENTER = "Enter";
+    static JButton enterButton;
+    public static JTextArea output;
+    public static JTextField input;
+    static JFrame frame;
+    static JPanel panel;
+    public static String testString = "test";
+    
+	public class ThingWindow {
+		StandalonePluginWorkspace pluginWorkspaceAccess;
+		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
+		public void popItUp(){
+			frame = new JFrame("Test");
+	        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	        panel = new JPanel();
+	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+	        panel.setOpaque(true);
+	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess);
+	        output = new JTextArea(15, 50);
+	        output.setWrapStyleWord(true);
+	        output.setEditable(false);
+	        JScrollPane scroller = new JScrollPane(output);
+	        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+	        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+	        JPanel inputpanel = new JPanel();
+	        inputpanel.setLayout(new FlowLayout());
+	        input = new JTextField(20);
+	        enterButton = new JButton("Enter");
+	        enterButton.setActionCommand(ENTER);
+	        enterButton.addActionListener(buttonListener);
+	        // enterButton.setEnabled(false);
+	        input.setActionCommand(ENTER);
+	        input.addActionListener(buttonListener);
+	        DefaultCaret caret = (DefaultCaret) output.getCaret();
+	        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+	        panel.add(scroller);
+	        inputpanel.add(input);
+	        inputpanel.add(enterButton);
+	        panel.add(inputpanel);
+	        frame.getContentPane().add(BorderLayout.CENTER, panel);
+	        frame.pack();
+	        frame.setLocationByPlatform(true);
+	        // Center of screen
+	        // frame.setLocationRelativeTo(null);
+	        frame.setVisible(true);
+	        frame.setResizable(false);
+	        input.requestFocus();
+		}
+	};
+	
 	public static class ButtonListener implements ActionListener
-    {
-
-        public void actionPerformed(final ActionEvent ev)
+    {	
+		StandalonePluginWorkspace pluginWorkspaceAccess;
+		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
+		public void actionPerformed(ActionEvent ev)
         {
             if (!input.getText().trim().equals(""))
             {
                 String cmd = ev.getActionCommand();
                 if (ENTER.equals(cmd))
-                {
-                    output.append(input.getText());
-                    if (input.getText().trim().equals(testString)) output.append(" = " + testString);
-                    else output.append(" != " + testString);
+                {	
+                	WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+  				   WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+  				   WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+  				   TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
+  				   
+  				 try {
+					  // only one element in there
+					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
+//					Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
+//					Object [] nodes = xmltextPage.evaluateXPath(stringThere);
+//					Object [] allNodes = xmltextPage.evaluateXPath("//node()");
+						if(nodes.length > 0) {
+							// we just cast an object as a node and it works
+							Node currentNode = (Node) nodes[0];
+							output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+//							pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
+							output.append("\n");
+						}
+//					pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
+				} catch (XPathException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+//                    output.append(input.getText());
+//                    if (input.getText().trim().equals(testString)) output.append(" = " + testString);
+//                    else output.append(" != " + testString);
                     output.append("\n");
                 }
             }
