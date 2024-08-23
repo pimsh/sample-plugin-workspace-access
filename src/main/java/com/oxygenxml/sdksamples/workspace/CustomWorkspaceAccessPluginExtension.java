@@ -124,6 +124,7 @@ import ro.sync.exml.workspace.api.standalone.ViewInfo;
 import ro.sync.exml.workspace.api.standalone.actions.MenusAndToolbarsContributorCustomizer;
 import ro.sync.exml.workspace.api.standalone.ui.ToolbarButton;
 import ro.sync.exml.workspace.api.util.XMLUtilAccess;
+import ro.sync.util.editorvars.EditorVariables;
 
 /**
  * Plugin extension - workspace access extension.
@@ -461,24 +462,35 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			public void actionPerformed(ActionEvent e) {
 				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 				Source xslSrc = new SAXSource(new org.xml.sax.InputSource(actionFile.getPath().replace("\\", "/")));
 				Reader docReader = editorAccess.createContentReader();
 			    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
 			    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
 			    Source xmlSrc = new SAXSource(is);
 			    StringWriter sw = new StringWriter();
-			    
-				try {
-					@SuppressWarnings("deprecation")
-					Transformer transformer = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
-					transformer.transform(xmlSrc, new StreamResult(sw));
-					int length = textPage.getDocument().getLength();
-					textPage.select(0, length);
-					textPage.deleteSelection();
-					textPage.getDocument().insertString(0, sw.toString(), null);
-				} catch (TransformerException | BadLocationException ex) {
-					pluginWorkspaceAccess.showInformationMessage(ex.getMessage());
+			    Node currentNode = null;
+			    try {
+					// this, for some reason, returns the current thing the caret is sitting on, only one element in there
+					Object [] nodes = xmltextPage.evaluateXPath(".");
+//					Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
+//					Object [] nodes = xmltextPage.evaluateXPath(stringThere);
+//					Object [] allNodes = xmltextPage.evaluateXPath("//node()");
+					
+						if(nodes.length > 0) {
+							// we just cast an object as a node and it works
+							currentNode = (Node) nodes[0];
+//							pluginWorkspaceAccess.showInformationMessage("action1 " + currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+//							pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
+						}
+//					pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
+				} catch (XPathException e11) {
+					// TODO Auto-generated catch block
+					e11.printStackTrace();
 				}
+				ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, textPage);
+				  thingWindow.popItUp();
+				  
 			}
 		};
 	}
@@ -494,11 +506,9 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 						  TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
-						  
 						  Node currentNode = null;
 						  try {
-							  // only one element in there
-							// this, for some reason, returns the current thing the caret is sitting on
+							// this, for some reason, returns the current thing the caret is sitting on, only one element in there
 							Object [] nodes = xmltextPage.evaluateXPath(".");
 //							Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
 //							Object [] nodes = xmltextPage.evaluateXPath(stringThere);
@@ -507,7 +517,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 								if(nodes.length > 0) {
 									// we just cast an object as a node and it works
 									currentNode = (Node) nodes[0];
-									pluginWorkspaceAccess.showInformationMessage("action1 " + currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+//									pluginWorkspaceAccess.showInformationMessage("action1 " + currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
 //									pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 								}
 //							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
@@ -515,48 +525,48 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode);
-						  thingWindow.popItUp();
+//						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode);
+//						  thingWindow.popItUp();
 						  
 //						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess);
 //						  thingWindow.popItUp();
 						  
-						  // loading the stylesheet as a source
-//						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
-//						  // grabbing a reader (Create a reader over the whole editor's content (exactly the XML content which gets saved on disk). The unsaved changes are 								included.)
-//						    Reader docReader = editorAccess.createContentReader();
-//						    // something about it being a saxon thing now
-//						    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
-//						    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
-//						    Source xmlSrc = new SAXSource(is);
-//						    StringWriter sw = new StringWriter();
-//						    
-//						  try {
-//							  // transformation itself
-//							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
-//							// results are being put into a StringWriter
-//							transformer1.transform(xmlSrc, new StreamResult(sw));
-//						} catch (TransformerConfigurationException e) {
-//							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-//							e.printStackTrace();
-//						} catch (TransformerException e) {
-//							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-//							e.printStackTrace();
-//						}
-////						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
-////						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
-//						try {
-//							int length = textPage.getDocument().getLength();
-//							textPage.select(0, length);
-//							textPage.deleteSelection();
-//							textPage.getDocument().insertString(0, sw.toString(), null);
-//						} catch (BadLocationException e) {
-//							// TODO Auto-generated catch block
-//							e.printStackTrace();
-//						}
-//						  if (textPage.hasSelection()) {
-//							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-//							  }
+//						   loading the stylesheet as a source
+						  Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
+						  // grabbing a reader (Create a reader over the whole editor's content (exactly the XML content which gets saved on disk). The unsaved changes are 								included.)
+						    Reader docReader = editorAccess.createContentReader();
+						    // something about it being a saxon thing now
+						    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
+						    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
+						    Source xmlSrc = new SAXSource(is);
+						    StringWriter sw = new StringWriter();
+						    
+						  try {
+							  // transformation itself
+							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+							// results are being put into a StringWriter
+							transformer1.transform(xmlSrc, new StreamResult(sw));
+						} catch (TransformerConfigurationException e) {
+							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+							e.printStackTrace();
+						} catch (TransformerException e) {
+							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+							e.printStackTrace();
+						}
+//						pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
+//						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
+						try {
+							int length = textPage.getDocument().getLength();
+							textPage.select(0, length);
+							textPage.deleteSelection();
+							textPage.getDocument().insertString(0, sw.toString(), null);
+						} catch (BadLocationException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						  if (textPage.hasSelection()) {
+							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+							  }
 						  } 
 		  };
 	}
@@ -572,18 +582,28 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	public class ThingWindow {
 		StandalonePluginWorkspace pluginWorkspaceAccess;
 		Node node;
+		Source xmlSrc;
+		Source xslSrc;
+		WSTextEditorPage textPage;
 		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.node = node;
 		}
+		
+		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node, Source xmlSrc, Source xslSrc, WSTextEditorPage textPage) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+			this.node = node;
+			this.xmlSrc = xmlSrc;
+			this.xslSrc = xslSrc;
+			this.textPage = textPage;		}
+		
 		public void popItUp(){
-			pluginWorkspaceAccess.showInformationMessage("window " + node.toString());
 			frame = new JFrame("Test");
 	        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	        panel = new JPanel();
 	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 	        panel.setOpaque(true);
-	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess);
+	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, textPage);
 	        output = new JTextArea(15, 50);
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
@@ -609,20 +629,36 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.pack();
 	        frame.setLocationByPlatform(true);
 	        // Center of screen
-	        // frame.setLocationRelativeTo(null);
+	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
 	        frame.setResizable(false);
 	        input.requestFocus();
-	        output.setText(node.toString());
+	        String string1 = EditorVariables.USER_HOME_DIR;
+	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + " " + string1);
+	        output.append("\n");
+	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
+	        output.append("\n");
+	        output.append(xmlSrc.toString());
+	        
 		}
 	};
 	
 	public static class ButtonListener implements ActionListener
     {	
 		StandalonePluginWorkspace pluginWorkspaceAccess;
-		
+		AbstractAction action;
+		Source xmlSrc;
+		Source xslSrc;
+		WSTextEditorPage textPage;
 		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
+		
+		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, WSTextEditorPage textPage) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+			this.xmlSrc = xmlSrc;
+			this.xslSrc = xslSrc;
+			this.textPage = textPage;
 		}
 		public void actionPerformed(ActionEvent ev)
         {
@@ -631,26 +667,18 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
                 String cmd = ev.getActionCommand();
                 if (ENTER.equals(cmd))
                 {	
-                	WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-  				   WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
+                   WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
   				   WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
-  				   TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
-  				   
   				 try {
 					  // only one element in there
 					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
-//					Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
-//					Object [] nodes = xmltextPage.evaluateXPath(stringThere);
-//					Object [] allNodes = xmltextPage.evaluateXPath("//node()");
 						if(nodes.length > 0) {
 							// we just cast an object as a node and it works
 							Node currentNode = (Node) nodes[0];
 							output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
-//							pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 							output.append("\n");
 							
 						}
-//					pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
 				} catch (XPathException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -661,8 +689,38 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
                     output.append("\n");
                 }
             }
+            
+            StringWriter sw = new StringWriter();
+		    
+		  try {
+			  // transformation itself
+			Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+			// results are being put into a StringWriter
+			transformer1.transform(xmlSrc, new StreamResult(sw));
+		} catch (TransformerConfigurationException e) {
+			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+			e.printStackTrace();
+		} catch (TransformerException e) {
+			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+			e.printStackTrace();
+		}
+//		pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
+//		pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
+		try {
+			int length = textPage.getDocument().getLength();
+			textPage.select(0, length);
+			textPage.deleteSelection();
+			textPage.getDocument().insertString(0, sw.toString(), null);
+		} catch (BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		  if (textPage.hasSelection()) {
+			  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+			  }
             input.setText("");
             input.requestFocus();
+            
         }
 		
     }
