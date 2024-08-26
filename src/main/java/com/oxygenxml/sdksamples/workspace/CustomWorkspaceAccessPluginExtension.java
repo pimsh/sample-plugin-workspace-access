@@ -5,10 +5,12 @@ import java.awt.FlowLayout;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -28,6 +30,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.management.loading.PrivateClassLoader;
 import javax.swing.AbstractAction;
@@ -53,6 +57,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.http.message.BufferedHeader;
 import org.w3c.dom.Node;
 import org.xml.sax.XMLReader;
 
@@ -488,7 +493,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					// TODO Auto-generated catch block
 					e11.printStackTrace();
 				}
-				ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, textPage);
+				ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage);
 				  thingWindow.popItUp();
 				  
 			}
@@ -571,7 +576,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		  };
 	}
 	
-	private static String ENTER = "Enter";
+	private static String RUN = "Run";
 	private static String SHOW = "Show";
     static JButton enterButton;
     static JButton showButton;
@@ -586,43 +591,47 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		Node node;
 		Source xmlSrc;
 		Source xslSrc;
+		File actionFile;
 		WSTextEditorPage textPage;
 		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.node = node;
 		}
 		
-		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node, Source xmlSrc, Source xslSrc, WSTextEditorPage textPage) {
+		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.node = node;
 			this.xmlSrc = xmlSrc;
 			this.xslSrc = xslSrc;
-			this.textPage = textPage;		}
+			this.textPage = textPage;
+			this.actionFile = actionFile;
+		}
 		
 		public void popItUp(){
-			frame = new JFrame("Test");
+			frame = new JFrame(actionFile.getName());
 	        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	        frame.setResizable(true);
 	        panel = new JPanel();
 	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 	        panel.setOpaque(true);
-	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, textPage);
+	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage);
 	        output = new JTextArea(15, 50);
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
 	        JScrollPane scroller = new JScrollPane(output);
 	        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-	        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+	        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 	        JPanel inputpanel = new JPanel();
 	        inputpanel.setLayout(new FlowLayout());
 	        input = new JTextField(20);
-	        enterButton = new JButton("Enter");
+	        enterButton = new JButton("Run");
 	        showButton = new JButton("Show");
-	        enterButton.setActionCommand(ENTER);
+	        enterButton.setActionCommand(RUN);
 	        showButton.setActionCommand(SHOW);
 	        enterButton.addActionListener(buttonListener);
 	        showButton.addActionListener(buttonListener);
 	        // enterButton.setEnabled(false);
-	        input.setActionCommand(ENTER);
+	        input.setActionCommand(RUN);
 	        input.setActionCommand(SHOW);
 	        input.addActionListener(buttonListener);
 	        DefaultCaret caret = (DefaultCaret) output.getCaret();
@@ -638,14 +647,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        // Center of screen
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
-	        frame.setResizable(false);
 	        input.requestFocus();
 	        String string1 = EditorVariables.USER_HOME_DIR;
 	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + " " + string1);
 	        output.append("\n");
-	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
+//	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
 	        output.append("\n");
-	        output.append(xmlSrc.toString());
+//	        output.append(xmlSrc.toString());
 	        
 		}
 	};
@@ -656,15 +664,17 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		AbstractAction action;
 		Source xmlSrc;
 		Source xslSrc;
+		File actionFile;
 		WSTextEditorPage textPage;
 		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 		}
 		
-		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, WSTextEditorPage textPage) {
+		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.xmlSrc = xmlSrc;
 			this.xslSrc = xslSrc;
+			this.actionFile = actionFile;
 			this.textPage = textPage;
 		}
 		
@@ -672,7 +682,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		public void actionPerformed(ActionEvent ev)
         {	
 			String cmd = ev.getActionCommand();
-			if (ENTER.equals(cmd))
+			// the run button action
+			if (RUN.equals(cmd))
             {	
 				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
@@ -723,9 +734,15 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
                 output.append("\n");
             }
 			
+			
+			// the Show button action
 			if (SHOW.equals(cmd) && !input.getText().trim().equals("")) {
 				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+				
+				// might be better to use the initial action file here instead, since it's getting converted every run anyway
+				// OR might be better to edit the converted varying one so that the changes wouldn't remain, hm
+//			        pluginWorkspaceAccess.showInformationMessage(sc.next());
 				try {
 					  // only one element in there
 					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
@@ -733,7 +750,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							// we just cast an object as a node and it works
 							Node currentNode = (Node) nodes[0];
 							output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
-//							output.append("\n");
+							output.append("\n");
 							
 						}
 				} catch (XPathException e) {
@@ -742,13 +759,45 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				}
 			}
 			
-//            if (!input.getText().trim().equals(""))
-//            {
-//            	output.append("bla1");
-//                String cmd2 = ev.getActionCommand();
-//                output.append("\n");
-//                output.append(cmd2);
-//            }
+            if (!input.getText().trim().equals(""))
+            {	
+            	
+//            	String target = "xsl:param";
+            	String target = input.getText();
+					
+            	Scanner sc;
+				try {
+					Pattern p = Pattern.compile(target, Pattern.CASE_INSENSITIVE);
+					BufferedReader bf = new BufferedReader(new FileReader(actionFile));
+					int lineCounter = 0;
+					String lineBf;
+					while((lineBf = bf.readLine()) != null) {
+						lineCounter++;
+						Matcher m = p.matcher(lineBf);
+						
+						while (m.find()) {
+							output.append("target found at " + m.start() + "-" + m.end() + " on line " + lineCounter + "\n");
+						}
+					}
+					
+//					sc = new Scanner(actionFile);
+//					int lineNumber = 0;
+//					while (sc.hasNextLine()) {
+//						String line = sc.nextLine();
+//						lineNumber++;
+//						if(line.contains("param")) {
+//							output.append(line);
+//						}
+//					}
+					output.append("\n");
+					
+//					output.append(sc.next() + " " + sc.next());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                output.append("\n");
+            }
             
 //            StringWriter sw = new StringWriter();
 //		    
