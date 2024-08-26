@@ -667,64 +667,117 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			this.xslSrc = xslSrc;
 			this.textPage = textPage;
 		}
+		
+		
 		public void actionPerformed(ActionEvent ev)
-        {
-            if (!input.getText().trim().equals(""))
-            {
-                String cmd = ev.getActionCommand();
-                if (ENTER.equals(cmd))
-                {	
-                   WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-  				   WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
-  				 try {
+        {	
+			String cmd = ev.getActionCommand();
+			if (ENTER.equals(cmd))
+            {	
+				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+				 try {
+				  // only one element in there
+				Object [] nodes = xmltextPage.evaluateXPath(input.getText());
+					if(nodes.length > 0) {
+						// we just cast an object as a node and it works
+						Node currentNode = (Node) nodes[0];
+//						output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+//						output.append("\n");
+						
+					}
+			} catch (XPathException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+				 
+				 StringWriter sw = new StringWriter();
+				    
+				  try {
+					  // transformation itself
+					Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+					// results are being put into a StringWriter
+					transformer1.transform(xmlSrc, new StreamResult(sw));
+				} catch (TransformerConfigurationException e) {
+					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+					e.printStackTrace();
+				} catch (TransformerException e) {
+					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+					e.printStackTrace();
+				}
+				try {
+					int length = textPage.getDocument().getLength();
+					textPage.select(0, length);
+					textPage.deleteSelection();
+					textPage.getDocument().insertString(0, sw.toString(), null);
+				} catch (BadLocationException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				  if (textPage.hasSelection()) {
+					  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+					  }
+//                output.append(input.getText());
+//                if (input.getText().trim().equals(testString)) output.append(" = " + testString);
+//                else output.append(" != " + testString);
+                output.append("\n");
+            }
+			
+			if (SHOW.equals(cmd) && !input.getText().trim().equals("")) {
+				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+				try {
 					  // only one element in there
 					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
 						if(nodes.length > 0) {
 							// we just cast an object as a node and it works
 							Node currentNode = (Node) nodes[0];
 							output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
-							output.append("\n");
+//							output.append("\n");
 							
 						}
 				} catch (XPathException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-//                    output.append(input.getText());
-//                    if (input.getText().trim().equals(testString)) output.append(" = " + testString);
-//                    else output.append(" != " + testString);
-                    output.append("\n");
-                }
-            }
+			}
+			
+//            if (!input.getText().trim().equals(""))
+//            {
+//            	output.append("bla1");
+//                String cmd2 = ev.getActionCommand();
+//                output.append("\n");
+//                output.append(cmd2);
+//            }
             
-            StringWriter sw = new StringWriter();
-		    
-		  try {
-			  // transformation itself
-			Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
-			// results are being put into a StringWriter
-			transformer1.transform(xmlSrc, new StreamResult(sw));
-		} catch (TransformerConfigurationException e) {
-			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-			e.printStackTrace();
-		} catch (TransformerException e) {
-			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-			e.printStackTrace();
-		}
-//		pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
-//		pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
-		try {
-			int length = textPage.getDocument().getLength();
-			textPage.select(0, length);
-			textPage.deleteSelection();
-			textPage.getDocument().insertString(0, sw.toString(), null);
-		} catch (BadLocationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		  if (textPage.hasSelection()) {
-			  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-			  }
+//            StringWriter sw = new StringWriter();
+//		    
+//		  try {
+//			  // transformation itself
+//			Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+//			// results are being put into a StringWriter
+//			transformer1.transform(xmlSrc, new StreamResult(sw));
+//		} catch (TransformerConfigurationException e) {
+//			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+//			e.printStackTrace();
+//		} catch (TransformerException e) {
+//			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+//			e.printStackTrace();
+//		}
+////		pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
+////		pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
+//		try {
+//			int length = textPage.getDocument().getLength();
+//			textPage.select(0, length);
+//			textPage.deleteSelection();
+//			textPage.getDocument().insertString(0, sw.toString(), null);
+//		} catch (BadLocationException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		  if (textPage.hasSelection()) {
+//			  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+//			  }
             input.setText("");
             input.requestFocus();
             
