@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -132,6 +133,7 @@ import ro.sync.exml.workspace.api.standalone.actions.MenusAndToolbarsContributor
 import ro.sync.exml.workspace.api.standalone.ui.ToolbarButton;
 import ro.sync.exml.workspace.api.util.XMLUtilAccess;
 import ro.sync.util.editorvars.EditorVariables;
+import ro.sync.util.xslt.XPathElementsAndAttributesExtractor;
 
 /**
  * Plugin extension - workspace access extension.
@@ -499,6 +501,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			    
 			    try {
 					Pattern p = Pattern.compile("param name=\".*?\"", Pattern.CASE_INSENSITIVE);
+//					Pattern p = Pattern.compile("xsl\\:param", Pattern.CASE_INSENSITIVE);
+//					Pattern p = Pattern.compile("param", Pattern.CASE_INSENSITIVE);
 					BufferedReader bf = new BufferedReader(new FileReader(actionFile));
 					int lineCounter = 0;
 					String lineBf;
@@ -509,9 +513,15 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						Matcher m = p.matcher(lineBf);
 						
 						while (m.find()) {
+							// adding an element to an array that'd provide us with the number of the params
 							matches.add(m.start());
-//							names.add(String.valueOf(m.end()));
+							// adding a name of the param in a dumb way
 							names.add(lineBf.substring(m.start()+12, m.end()-1));
+							
+							// should have the parser find the 'name="..."' in a string with param, no matter where it sits
+//							names.add(lineBf.substring(m.start()+12, m.end()-1) + " " + lineCounter + " " + lineBf.indexOf("name=\""));
+//							names.add(lineBf.substring(m.start()+12, m.end()-1) + " " + lineBf.indexOf("name=\"") + lineBf.lastIndexOf("name=\".*?\""));
+							
 						}
 					}
 					
@@ -722,9 +732,15 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        inputpanel.add(input);
 	        inputpanel.add(enterButton);
 	        inputpanel.add(showButton);
+	        
+	        // new map here
+	        HashMap<String, JTextField> map = null;
 	        for (int i = 0; i < paramCount; i++) {
 	        	inputpanel.add(new JLabel(paramNames.get(i)));
-				inputpanel.add(new JTextField(20));
+	        	JTextField newField= new JTextField();
+				inputpanel.add(newField);
+				map.put(paramNames.get(i), newField);
+				// store pairs of name-textfield in the map
 			}
 	        
 	        panel.add(inputpanel);
@@ -795,6 +811,9 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				  try {
 					  // transformation itself
 					Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
+					
+					
+					// loop through the map of name-textfield here
 					
 					transformer1.clearParameters();
 					if(!input.getText().trim().equals("")) {
