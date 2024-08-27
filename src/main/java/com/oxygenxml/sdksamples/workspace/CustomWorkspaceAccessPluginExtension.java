@@ -493,8 +493,81 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					// TODO Auto-generated catch block
 					e11.printStackTrace();
 				}
-				ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage);
-				  thingWindow.popItUp();
+			    
+			    try {
+					Pattern p = Pattern.compile("param", Pattern.CASE_INSENSITIVE);
+					BufferedReader bf = new BufferedReader(new FileReader(actionFile));
+					int lineCounter = 0;
+					String lineBf;
+					ArrayList<Object> matches = new ArrayList<Object>();
+					while((lineBf = bf.readLine()) != null) {
+						lineCounter++;
+						Matcher m = p.matcher(lineBf);
+						
+						while (m.find()) {
+							matches.add(m.start());
+//							output.append("param" + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
+							
+						}
+					}
+					
+					if (matches.size() > 0) {
+						ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage);
+						  thingWindow.popItUp();
+					}
+					
+					else {
+					    
+						  try {
+							  // transformation itself
+							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+							// results are being put into a StringWriter
+							transformer1.transform(xmlSrc, new StreamResult(sw));
+						} catch (TransformerConfigurationException ex1) {
+							pluginWorkspaceAccess.showInformationMessage(ex1.getMessage());
+							ex1.printStackTrace();
+						} catch (TransformerException ex2) {
+							pluginWorkspaceAccess.showInformationMessage(ex2.getMessage());
+							ex2.printStackTrace();
+						}
+						try {
+							int length = textPage.getDocument().getLength();
+							textPage.select(0, length);
+							textPage.deleteSelection();
+							textPage.getDocument().insertString(0, sw.toString(), null);
+						} catch (BadLocationException ex3) {
+							// TODO Auto-generated catch block
+							ex3.printStackTrace();
+						}
+						  if (textPage.hasSelection()) {
+							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+							  }
+//		                output.append(input.getText());
+//		                if (input.getText().trim().equals(testString)) output.append(" = " + testString);
+//		                else output.append(" != " + testString);
+		                output.append("\n");
+					}
+					
+//					sc = new Scanner(actionFile);
+//					int lineNumber = 0;
+//					while (sc.hasNextLine()) {
+//						String line = sc.nextLine();
+//						lineNumber++;
+//						if(line.contains("param")) {
+//							output.append(line);
+//						}
+//					}
+					output.append("\n");
+					
+//					output.append(sc.next() + " " + sc.next());
+				} catch (IOException er) {
+					// TODO Auto-generated catch block
+					er.printStackTrace();
+				}
+			    
+			    
+//				ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage);
+//				  thingWindow.popItUp();
 				  
 			}
 		};
@@ -776,7 +849,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						Matcher m = p.matcher(lineBf);
 						
 						while (m.find()) {
-							output.append("target found at " + m.start() + "-" + m.end() + " on line " + lineCounter + "\n");
+							output.append(target + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
+							
 						}
 					}
 					
