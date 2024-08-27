@@ -40,6 +40,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
@@ -111,6 +112,7 @@ import ro.sync.exml.workspace.api.PluginWorkspaceProvider;
 import ro.sync.exml.workspace.api.editor.WSEditor;
 import ro.sync.exml.workspace.api.editor.page.WSTextBasedEditorPage;
 import ro.sync.exml.workspace.api.editor.page.author.WSAuthorEditorPage;
+import ro.sync.exml.workspace.api.editor.page.author.actions.ActionsProvider;
 import ro.sync.exml.workspace.api.editor.page.text.WSTextEditorPage;
 import ro.sync.exml.workspace.api.editor.page.text.xml.TextDocumentController;
 import ro.sync.exml.workspace.api.editor.page.text.xml.TextOperationException;
@@ -144,6 +146,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
+	  ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 	  //You can set or read global options.
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
 	  //		  pluginWorkspaceAccess.setGlobalObjectProperty("can.edit.read.only.files", Boolean.FALSE);
@@ -495,24 +498,25 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				}
 			    
 			    try {
-					Pattern p = Pattern.compile("param", Pattern.CASE_INSENSITIVE);
+					Pattern p = Pattern.compile("param name=\".*?\"", Pattern.CASE_INSENSITIVE);
 					BufferedReader bf = new BufferedReader(new FileReader(actionFile));
 					int lineCounter = 0;
 					String lineBf;
 					ArrayList<Object> matches = new ArrayList<Object>();
+					ArrayList<String> names = new ArrayList<>();
 					while((lineBf = bf.readLine()) != null) {
 						lineCounter++;
 						Matcher m = p.matcher(lineBf);
 						
 						while (m.find()) {
 							matches.add(m.start());
-//							output.append("param" + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
-							
+//							names.add(String.valueOf(m.end()));
+							names.add(lineBf.substring(m.start()+12, m.end()-1));
 						}
 					}
 					
 					if (matches.size() > 0) {
-						ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage);
+						ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage, matches.size(), names);
 						  thingWindow.popItUp();
 					}
 					
@@ -520,7 +524,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					    
 						  try {
 							  // transformation itself
-							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
 							// results are being put into a StringWriter
 							transformer1.transform(xmlSrc, new StreamResult(sw));
 						} catch (TransformerConfigurationException ex1) {
@@ -666,18 +670,23 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		Source xslSrc;
 		File actionFile;
 		WSTextEditorPage textPage;
+		int paramCount;
+		ArrayList<String> paramNames;
+		
 		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.node = node;
 		}
 		
-		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage) {
+		public ThingWindow (StandalonePluginWorkspace pluginWorkspaceAccess, Node node, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage, int paramCount, ArrayList<String> paramNames) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.node = node;
 			this.xmlSrc = xmlSrc;
 			this.xslSrc = xslSrc;
 			this.textPage = textPage;
 			this.actionFile = actionFile;
+			this.paramCount = paramCount;
+			this.paramNames = paramNames;
 		}
 		
 		public void popItUp(){
@@ -713,6 +722,11 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        inputpanel.add(input);
 	        inputpanel.add(enterButton);
 	        inputpanel.add(showButton);
+	        for (int i = 0; i < paramCount; i++) {
+	        	inputpanel.add(new JLabel(paramNames.get(i)));
+				inputpanel.add(new JTextField(20));
+			}
+	        
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
@@ -726,6 +740,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.append("\n");
 	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
 	        output.append("\n");
+	        output.append(String.valueOf(paramCount) + " param");
 //	        output.append(xmlSrc.toString());
 	        
 		}
