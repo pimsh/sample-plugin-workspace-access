@@ -65,6 +65,7 @@ import org.xml.sax.XMLReader;
 
 import com.google.common.io.Files;
 import com.ibm.icu.text.Edits.Iterator;
+import com.icl.saxon.om.Namespace;
 import com.oxygenxml.editor.swtutil.td;
 
 import ro.sync.basic.io.FilePathToURI;
@@ -706,7 +707,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        panel = new JPanel();
 	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 	        panel.setOpaque(true);
-	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage);
+	     
+//	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage);
 	        output = new JTextArea(15, 50);
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
@@ -715,6 +717,16 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 	        JPanel inputpanel = new JPanel();
 	        inputpanel.setLayout(new FlowLayout());
+	     // new map here
+	        HashMap<String, JTextField> map = new HashMap<String, JTextField>();
+	        for (int i = 0; i < paramCount; i++) {
+	        	inputpanel.add(new JLabel(paramNames.get(i)));
+	        	JTextField newField= new JTextField(10);
+				inputpanel.add(newField);
+				map.put(paramNames.get(i), newField);
+				// store pairs of name-textfield in the map
+			}
+	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage, map, paramNames);
 	        input = new JTextField(20);
 	        enterButton = new JButton("Run");
 	        showButton = new JButton("Show");
@@ -732,16 +744,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        inputpanel.add(input);
 	        inputpanel.add(enterButton);
 	        inputpanel.add(showButton);
-	        
-	        // new map here
-	        HashMap<String, JTextField> map = null;
-	        for (int i = 0; i < paramCount; i++) {
-	        	inputpanel.add(new JLabel(paramNames.get(i)));
-	        	JTextField newField= new JTextField();
-				inputpanel.add(newField);
-				map.put(paramNames.get(i), newField);
-				// store pairs of name-textfield in the map
-			}
 	        
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
@@ -770,16 +772,21 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		Source xslSrc;
 		File actionFile;
 		WSTextEditorPage textPage;
+		HashMap<String, JTextField> map;
+		ArrayList<String> paramNames;
+		
 		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 		}
 		
-		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage) {
+		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage, HashMap<String, JTextField> map, ArrayList<String> paramNames) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
 			this.xmlSrc = xmlSrc;
 			this.xslSrc = xslSrc;
 			this.actionFile = actionFile;
 			this.textPage = textPage;
+			this.map = map;
+			this.paramNames = paramNames;
 		}
 		
 		
@@ -814,11 +821,20 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					
 					
 					// loop through the map of name-textfield here
-					
 					transformer1.clearParameters();
-					if(!input.getText().trim().equals("")) {
-						transformer1.setParameter("element_xpath", input.getText());
-					}
+					for (int i = 0; i < map.size(); i++) {
+						if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
+							transformer1.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+							output.append("\n");
+							output.append(paramNames.get(i) + " " + transformer1.getParameter(paramNames.get(i)).toString());
+						}
+					}					
+					
+					
+//					if(!input.getText().trim().equals("")) {
+//						transformer1.setParameter("element_xpath", input.getText());
+//					}
+					
 //					output.append((String) transformer1.getParameter("element_xpath"));
 //					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
 					// results are being put into a StringWriter
@@ -866,6 +882,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
+//				for (int i = 0; i < map.size(); i++) {
+//					if(!input.getText().trim().equals("")) {
+//						output.append(map.get(paramNames.get(i)).getText());
+//					}
+//				}		
+				
 			}
 			
             if (!input.getText().trim().equals(""))
