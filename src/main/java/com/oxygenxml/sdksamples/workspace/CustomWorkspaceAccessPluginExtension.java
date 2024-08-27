@@ -160,6 +160,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
+	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
+	
 	
 	// collecting all the found files and showing them in an infomessage
 	Collection<File> allStylesheets = new ArrayList<File>();
@@ -259,6 +261,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //			  mainMenuBar.add(myFirstMenu, mainMenuBar.getMenuCount() - 2);
 			  
 			  JMenu mySecondMenu = new JMenu("Menu2");
+			  mySecondMenu.setOpaque(true);
 			  
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
@@ -269,7 +272,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			    	mySecondMenu.add(currentAction);
 			    }
 			  //mySecondMenu.add(selectionSourceAction);
-			  //mySecondMenu.add(anotherAction);
+			  mySecondMenu.add(settingsAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
 	  });
@@ -425,6 +428,19 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			}
 		 }
 	 };
+ }
+ 
+ 
+ private AbstractAction createSettingsAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
+	return new AbstractAction("Settings") {
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			pluginWorkspaceAccess.showInformationMessage("SETTINGS WINDOW");
+			
+		}
+	};
+	 
  }
  
 // adding ALL the files from the folder to an array
@@ -845,17 +861,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					textPage.deleteSelection();
 					textPage.getDocument().insertString(0, sw.toString(), null);
 					
-					transformer1.clearParameters();
+//					transformer1.clearParameters();
+					
 				} catch (TransformerException | BadLocationException e) {
 					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 					e.printStackTrace();
 				}
-				  if (textPage.hasSelection()) {
-					  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-					  }
-//                output.append(input.getText());
-//                if (input.getText().trim().equals(testString)) output.append(" = " + testString);
-//                else output.append(" != " + testString);
+				  
                 output.append("\n");
                 
             }
@@ -883,11 +895,12 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					e.printStackTrace();
 				}
 				
-//				for (int i = 0; i < map.size(); i++) {
-//					if(!input.getText().trim().equals("")) {
+				for (int i = 0; i < map.size(); i++) {
+					if(!input.getText().trim().equals("")) {
 //						output.append(map.get(paramNames.get(i)).getText());
-//					}
-//				}		
+//						output.append(transformer1.getParameter("element_xpath").toString());
+					}
+				}		
 				
 			}
 			
@@ -908,7 +921,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						Matcher m = p.matcher(lineBf);
 						
 						while (m.find()) {
-							output.append(target + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
+//							output.append(target + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
 							
 						}
 					}
