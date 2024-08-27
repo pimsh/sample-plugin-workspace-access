@@ -724,7 +724,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        String string1 = EditorVariables.USER_HOME_DIR;
 	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + " " + string1);
 	        output.append("\n");
-//	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
+	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
 	        output.append("\n");
 //	        output.append(xmlSrc.toString());
 	        
@@ -779,23 +779,25 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				    
 				  try {
 					  // transformation itself
-					Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+					Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
+					
+					transformer1.clearParameters();
+					if(!input.getText().trim().equals("")) {
+						transformer1.setParameter("element_xpath", input.getText());
+					}
+//					output.append((String) transformer1.getParameter("element_xpath"));
+//					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
 					// results are being put into a StringWriter
 					transformer1.transform(xmlSrc, new StreamResult(sw));
-				} catch (TransformerConfigurationException e) {
-					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-					e.printStackTrace();
-				} catch (TransformerException e) {
-					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-					e.printStackTrace();
-				}
-				try {
+					
 					int length = textPage.getDocument().getLength();
 					textPage.select(0, length);
 					textPage.deleteSelection();
 					textPage.getDocument().insertString(0, sw.toString(), null);
-				} catch (BadLocationException e) {
-					// TODO Auto-generated catch block
+					
+					transformer1.clearParameters();
+				} catch (TransformerException | BadLocationException e) {
+					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 					e.printStackTrace();
 				}
 				  if (textPage.hasSelection()) {
@@ -805,6 +807,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //                if (input.getText().trim().equals(testString)) output.append(" = " + testString);
 //                else output.append(" != " + testString);
                 output.append("\n");
+                
             }
 			
 			
@@ -812,7 +815,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			if (SHOW.equals(cmd) && !input.getText().trim().equals("")) {
 				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
-				
 				// might be better to use the initial action file here instead, since it's getting converted every run anyway
 				// OR might be better to edit the converted varying one so that the changes wouldn't remain, hm
 //			        pluginWorkspaceAccess.showInformationMessage(sc.next());
