@@ -151,6 +151,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    */
   private JTextArea customMessagesArea;
   public static String stylesheetsFolderPath;
+  public static String configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
+  
+//  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
@@ -165,7 +168,10 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
 	  
-	File configFile = new File("C:/Users/imsh/testFolda/config.txt");
+//	  configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
+	  configPath = configPath.substring(6, configPath.length());
+	  pluginWorkspaceAccess.showInformationMessage(configPath);
+	File configFile = new File(configPath);
 	try {
 		if(configFile.createNewFile()) {
 			pluginWorkspaceAccess.showInformationMessage("config file already exists");
@@ -823,7 +829,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n");
 	        
 	        // gotta test this location with the packed jar version
-	        output.append((CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString()));
+//	        output.append((CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString()));
+	        output.append(configPath);
 	        output.append("\n");
 		}
 	}
