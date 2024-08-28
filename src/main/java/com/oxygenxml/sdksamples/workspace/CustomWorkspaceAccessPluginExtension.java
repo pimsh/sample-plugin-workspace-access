@@ -1,7 +1,9 @@
 package com.oxygenxml.sdksamples.workspace;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,6 +39,7 @@ import java.util.regex.Pattern;
 import javax.management.loading.PrivateClassLoader;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -56,6 +59,7 @@ import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -135,6 +139,7 @@ import ro.sync.exml.workspace.api.standalone.ui.ToolbarButton;
 import ro.sync.exml.workspace.api.util.XMLUtilAccess;
 import ro.sync.util.editorvars.EditorVariables;
 import ro.sync.util.xslt.XPathElementsAndAttributesExtractor;
+import ro.sync.exml.plugin.transform.*;
 
 /**
  * Plugin extension - workspace access extension.
@@ -145,6 +150,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * The custom messages area. A sample component added to your custom view.
    */
   private JTextArea customMessagesArea;
+  public static String stylesheetsFolderPath;
+  
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
@@ -157,12 +164,18 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
-
+	  
+	File configFile = new File("C:/Users/imsh/testFolda/config.txt");
+	try {
+		if(configFile.createNewFile()) {
+			pluginWorkspaceAccess.showInformationMessage("config file already exists");
+		}
+	} catch (IOException e) {
+		pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+	}
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
-	
-	
 	// collecting all the found files and showing them in an infomessage
 	Collection<File> allStylesheets = new ArrayList<File>();
     addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
@@ -436,8 +449,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			pluginWorkspaceAccess.showInformationMessage("SETTINGS WINDOW");
-			
+			SettingsWindow settingsWindow = new SettingsWindow();
+			settingsWindow.popItUp();
 		}
 	};
 	 
@@ -609,6 +622,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		return new AbstractAction("action1") {
 
 			public void actionPerformed(ActionEvent actionevent) {
+				
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 				  // get the textpages and stuff
@@ -688,7 +702,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
     public static JTextField input;
     static JFrame frame;
     static JPanel panel;
-    public static String testString = "test";
     
 	public class ThingWindow {
 		StandalonePluginWorkspace pluginWorkspaceAccess;
@@ -723,8 +736,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        panel = new JPanel();
 	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 	        panel.setOpaque(true);
-	     
-//	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage);
 	        output = new JTextArea(15, 50);
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
@@ -732,18 +743,21 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 	        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 	        JPanel inputpanel = new JPanel();
-	        inputpanel.setLayout(new FlowLayout());
-	     // new map here
+//	        inputpanel.setLayout(new FlowLayout());
+	        inputpanel.setLayout(new BoxLayout(inputpanel, BoxLayout.Y_AXIS));
+	        
+	     // new map - parameter name as key, jtextfield as value so that we'd access their content later
 	        HashMap<String, JTextField> map = new HashMap<String, JTextField>();
 	        for (int i = 0; i < paramCount; i++) {
 	        	inputpanel.add(new JLabel(paramNames.get(i)));
 	        	JTextField newField= new JTextField(10);
+	        	newField.setActionCommand(RUN);
 				inputpanel.add(newField);
 				map.put(paramNames.get(i), newField);
 				// store pairs of name-textfield in the map
 			}
 	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage, map, paramNames);
-	        input = new JTextField(20);
+	        
 	        enterButton = new JButton("Run");
 	        showButton = new JButton("Show");
 	        enterButton.setActionCommand(RUN);
@@ -751,21 +765,22 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        enterButton.addActionListener(buttonListener);
 	        showButton.addActionListener(buttonListener);
 	        // enterButton.setEnabled(false);
+	        input = new JTextField(20);
 	        input.setActionCommand(RUN);
 	        input.setActionCommand(SHOW);
 	        input.addActionListener(buttonListener);
 	        DefaultCaret caret = (DefaultCaret) output.getCaret();
 	        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 	        panel.add(scroller);
-	        inputpanel.add(input);
+//	        inputpanel.add(input);
 	        inputpanel.add(enterButton);
-	        inputpanel.add(showButton);
+//	        inputpanel.add(showButton);
 	        
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
 	        frame.setLocationByPlatform(true);
-	        // Center of screen
+	        // Center of the screen
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
 	        input.requestFocus();
@@ -774,11 +789,64 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.append("\n");
 	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
 	        output.append("\n");
-	        output.append(String.valueOf(paramCount) + " param");
-//	        output.append(xmlSrc.toString());
+//	        output.append(String.valueOf(paramCount) + " param");
 	        
 		}
 	};
+	
+	public class SettingsWindow {
+		
+		public void popItUp() {
+			
+			frame = new JFrame("Settings");
+	        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	        frame.setResizable(true);
+	        panel = new JPanel();
+	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+	        panel.setOpaque(true);
+	        panel.setSize(100, 50);
+	        output = new JTextArea(15, 50);
+	        output.setWrapStyleWord(true);
+	        output.setEditable(false);
+	        input = new JTextField(20);
+	        input.addActionListener(new SettingsInputListener());
+	        panel.add(new JLabel("bla"));
+	        panel.add(input);
+	        panel.add(output);
+	        frame.getContentPane().add(BorderLayout.CENTER, panel);
+	        frame.pack();
+	        frame.setLocationByPlatform(true);
+	        frame.setLocationRelativeTo(null);
+	        frame.setVisible(true);
+	        
+	        
+	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n");
+	        
+	        // gotta test this location with the packed jar version
+	        output.append((CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString()));
+	        output.append("\n");
+		}
+	}
+	
+	public static class SettingsInputListener implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			
+//			output.setText(input.getText());
+			if(!input.getText().trim().equals("")) {
+				stylesheetsFolderPath = input.getText();
+//				output.append(input.getText());
+				output.append(stylesheetsFolderPath);
+				output.append("\n");
+				input.setText("");
+			}
+			else {
+				return;
+			}
+		}
+		
+	}
 	
 	public static class ButtonListener implements ActionListener
     {	
@@ -987,56 +1055,4 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
     return true;
   }
   
-  public class XSLTReportOperation extends AuthorOperationWithResult {
-	  
-	  @Override
-	  public String doOperation(AuthorDocumentModel model, ArgumentsMap args)
-	      throws AuthorOperationException {
-	    
-	    AuthorAccess authorAccess = model.getAuthorAccess();
-	    //Source xslSrc = new SAXSource(new org.xml.sax.InputSource(getScriptLocation(args)));
-	    Source xslSrc = new SAXSource(new org.xml.sax.InputSource("C:/Users/imsh/testFolda/beispiel.xsl"));
-	    Transformer transformer;
-	    try {
-	      transformer = authorAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0], 
-	          XMLUtilAccess.TRANSFORMER_SAXON_6); //TRANSFORMER_SAXON_PROFESSIONAL_EDITION
-	    } catch (TransformerConfigurationException e) {
-	      throw new IllegalStateException(e);
-	    }
-	    
-	    AuthorEditorAccess editorAccess = authorAccess.getEditorAccess();
-	    Reader docReader = editorAccess.createContentReader();
-	    org.xml.sax.InputSource is = new org.xml.sax.InputSource(docReader);
-	    is.setSystemId(editorAccess.getEditorLocation().toExternalForm());
-	    Source xmlSrc = new SAXSource(is);
-	    StringWriter sw = new StringWriter();
-	    
-	    try {
-	      transformer.transform(xmlSrc, new StreamResult(sw ));
-	    } catch (TransformerException e) {
-	      return "FAILURE";
-	    }
-	    
-	    return sw.toString();
-	  }
-
-	  private String getScriptLocation(ArgumentsMap args) {
-	    String scriptLocation = (String) args.getArgumentValue("script");
-	    File script = new File(XSLTReportPlugin.baseDir, scriptLocation);
-	    try {
-	      if (contains(XSLTReportPlugin.baseDir, script)) {
-	        return URLUtil.correct(script).toExternalForm();
-	      }
-	    } catch (IOException e) {
-	      throw new IllegalArgumentException("The 'script' file is not located in the plugin's folder.", e);
-	    }
-	    return null;
-	  }
-
-	  private boolean contains(File folder, File file) throws IOException {
-	    return file.getCanonicalPath().startsWith(folder.getCanonicalPath() + File.separator);
-	  }
-
-	}
-
 	}
