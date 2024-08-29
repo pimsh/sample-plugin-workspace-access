@@ -155,7 +155,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   public static String configPathAbs = CustomWorkspaceAccessPluginExtension.class.getProtectionDomain().getCodeSource().getLocation().getPath();
   
   public static File configFile;
-  public static String configFilePath;
   public static String configPathAbsTrimmed;
   
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
@@ -172,40 +171,39 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
-//	  pluginWorkspaceAccess.showInformationMessage(configPathAbs);  
-	  configPath = configPath.split("file:/")[1];
-	  configPath = configPath.replaceAll("%20", " ");
-	  configPathAbs = configPathAbs.replaceAll("%20", " ");
-	  if (null != configPathAbs && configPathAbs.length() > 0 )
-	  {
-	      int endIndex = configPathAbs.lastIndexOf("/");
-	      if (endIndex != -1)  
-	      {
-	          configPathAbsTrimmed = configPathAbs.substring(0, endIndex);
-	      }
-	  }  
-	  pluginWorkspaceAccess.showInformationMessage(configPathAbs);
-	  pluginWorkspaceAccess.showInformationMessage(configPathAbsTrimmed); 
-//	  pluginWorkspaceAccess.showInformationMessage(configPath);
 	  
+//	  configPath = configPath.split("file:/")[1].replaceAll("%20", " ");
+//	  configPathAbs = configPathAbs.replaceAll("%20", " ");
+//	  if (null != configPathAbs && configPathAbs.length() > 0 )
+//	  {
+//	      int endIndex = configPathAbs.lastIndexOf("/");
+//	      if (endIndex != -1)  
+//	      {
+//	          configPathAbsTrimmed = configPathAbs.substring(0, endIndex);
+//	      }
+//	  }
+	  
+	String userHomePath = System.getProperty("user.home").replace("\\", "/");
+	File dir = new File(userHomePath + "/OxygenPluginConfig");
+	if (!dir.exists()){
+	    dir.mkdirs();
+	}
 //	File configFile = new File(configPath);
 //	File configFile = new File(configPathAbs);
 //	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent() + "/config.txt");
-	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent().replace("\\", "/") + "/config.txt");
+//	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent().replace("\\", "/") + "/config.txt");
 //	configFile = new File(new File(configPath).getAbsoluteFile().getParent() + "/config.txt");
-	
-//	configFile = new File("C:/Users/imsh/Oxygen XML Editor 26/plugins/oxygen-plugin-workspace-access-1.0/lib/" + "/config.txt");
+	  
+	String configFileName = "/" + "plugin1-" + "config" + "-" + System.getProperty("user.name");
+	configFile = new File(userHomePath + "/OxygenPluginConfig/" + configFileName);
 	
 	try {
 		if(configFile.createNewFile()) {
-			pluginWorkspaceAccess.showInformationMessage("config created");
+			pluginWorkspaceAccess.showInformationMessage("config created: " + configFile.getAbsolutePath());
 		}
 	} catch (IOException e) {
 		pluginWorkspaceAccess.showInformationMessage("createNewFile: " + e.getMessage());
 	}
-	
-	configFilePath = configFile.getAbsolutePath();
-	configFilePath = configFilePath.replace("\\", "/");
 	
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
