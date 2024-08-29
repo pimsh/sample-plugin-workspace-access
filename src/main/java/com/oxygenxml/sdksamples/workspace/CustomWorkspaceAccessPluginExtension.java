@@ -153,7 +153,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * The custom messages area. A sample component added to your custom view.
    */
   private JTextArea customMessagesArea;
-  public static String stylesheetsFolderPath;
+//  public static String stylesheetsFolderPath = System.getProperty("user.home") + "/OxygenPluginConfig";
+  public static String stylesheetsFolderPath = "C:/Users/imsh/testFolda";
   public static String configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   public static String configPathAbs = CustomWorkspaceAccessPluginExtension.class.getProtectionDomain().getCodeSource().getLocation().getPath();
   
@@ -187,7 +188,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //	          configPathAbsTrimmed = configPathAbs.substring(0, endIndex);
 //	      }
 //	  }
-	  
+	
 	String userHomePath = System.getProperty("user.home").replace("\\", "/");
 	File dir = new File(userHomePath + "/OxygenPluginConfig");
 	if (!dir.exists()){
@@ -215,7 +216,24 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
 	// collecting all the found files and showing them in an infomessage
 	Collection<File> allStylesheets = new ArrayList<File>();
-    addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
+	
+	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
+	try {
+		Scanner sc = new Scanner(configFile);
+		if (sc.hasNext())
+			addTree(new File(stylesheetsFolderPath), allStylesheets);
+		else
+			addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
+	} catch (FileNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+//	if(configFile.length() != 0)
+//		addTree(new File(stylesheetsFolderPath), allStylesheets);
+//	else
+//		addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
+//    addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
+    
     
     // an iterator to loop through the FILES collection
     java.util.Iterator<File> iterator1 = allStylesheets.iterator();
@@ -225,6 +243,32 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     // a collection for the ACTIONS to be made of the files collection
     Collection<Action> allActions = new ArrayList<Action>();
     
+	BufferedReader br = null;
+	try {
+		br = new BufferedReader(new FileReader(configFile));
+		String line = null;
+		while((line = br.readLine()) != null) {
+			String[] parts = line.split(" - ");
+			String name = parts[0].trim();
+			String value = parts[1].trim();
+			
+			if(!name.equals("") && !value.equals(""))
+				settingsMap.put(name, value);
+		}
+	} catch (IOException e) {
+		pluginWorkspaceAccess.showInformationMessage("1 " + e.getMessage());
+	}
+	
+	finally {
+		if(br !=null) {
+			try {
+				br.close();
+			} catch (IOException e) {
+				pluginWorkspaceAccess.showInformationMessage("2 " + e.getMessage());
+			}
+		}
+		
+	}
     // loopin through files collection adding them as actions to the actions collection
     int number = 0;
     while (iterator1.hasNext())
@@ -659,10 +703,9 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		return new AbstractAction("action1") {
 
 			public void actionPerformed(ActionEvent actionevent) {
-				
+				pluginWorkspaceAccess.showInformationMessage("hi");
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-				  // get the textpages and stuff
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 						  WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 						  TextDocumentController tdController = (TextDocumentController) xmltextPage.getDocumentController();
@@ -855,22 +898,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
 	        
-	        
 	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n");
-	        
-	        // gotta test this location with the packed jar version
-//	        output.append((CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString()));
-//	        output.append(configPath);
-//	        output.append(configPath);
-//	        output.append("\n");
-	        
-	        
-	        output.append("configPathAbs " + configPathAbs);
-	        output.append("\n");
-	        output.append("getParent " + (configFile.getAbsoluteFile().getParent()));
-	        output.append("\n");
-	        output.append("gotten from the file " + configFile.getAbsolutePath());
-	        output.append("\n");
+	        output.append(settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
 	
@@ -882,36 +911,36 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //			output.setText(input.getText());
 			if(!input.getText().trim().equals("")) {
 				
-				settingsMap.put("stylesheetFolderPath", input.getText());
+				settingsMap.put("stylesheetsFolderPath", input.getText());
 				
 				BufferedWriter bf = null;
 				
 				try {
 					bf = new BufferedWriter(new FileWriter(configFile));
 					for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
-						bf.write(entry.getKey() + " : " + entry.getValue());
+						bf.write(entry.getKey() + " - " + entry.getValue());
 						bf.newLine();
 					}
 				} catch (IOException e1) {
-					output.append(e1.getMessage());
+					output.append("3 " + e1.getMessage());
 				}
 				
 				finally {
 					try {
 						bf.close();
 					} catch (IOException e1) {
-						output.append(e1.getMessage());
+						output.append("4 " + e1.getMessage());
 					}
 				}
 				
 				try {
 					Scanner sc = new Scanner(configFile);
-					output.append("TIS FROM THE MAP " + sc.next());
+					output.append("FROM THE FILE " + sc.next());
 				} catch (FileNotFoundException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-//				output.append("TIS FROM THE MAP " + settingsMap.get("stylesheetFolderPath"));
+				output.append("FROM THE MAP " + settingsMap.get("stylesheetsFolderPath"));
 				output.append("\n");
 				input.setText("");
 			}
