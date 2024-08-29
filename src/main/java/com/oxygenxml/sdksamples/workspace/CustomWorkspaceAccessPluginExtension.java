@@ -8,11 +8,13 @@ import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -35,6 +37,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.management.loading.PrivateClassLoader;
 import javax.swing.AbstractAction;
@@ -156,6 +159,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
   public static File configFile;
   public static String configPathAbsTrimmed;
+  
+  public static HashMap<String, String> settingsMap = new HashMap<String, String>();
   
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
@@ -816,8 +821,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
 	        input.requestFocus();
-	        String string1 = EditorVariables.USER_HOME_DIR;
-	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + " " + string1);
+	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home"));
 	        output.append("\n");
 	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
 	        output.append("\n");
@@ -877,9 +881,37 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			
 //			output.setText(input.getText());
 			if(!input.getText().trim().equals("")) {
-				stylesheetsFolderPath = input.getText();
-//				output.append(input.getText());
-				output.append(stylesheetsFolderPath);
+				
+				settingsMap.put("stylesheetFolderPath", input.getText());
+				
+				BufferedWriter bf = null;
+				
+				try {
+					bf = new BufferedWriter(new FileWriter(configFile));
+					for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
+						bf.write(entry.getKey() + " : " + entry.getValue());
+						bf.newLine();
+					}
+				} catch (IOException e1) {
+					output.append(e1.getMessage());
+				}
+				
+				finally {
+					try {
+						bf.close();
+					} catch (IOException e1) {
+						output.append(e1.getMessage());
+					}
+				}
+				
+				try {
+					Scanner sc = new Scanner(configFile);
+					output.append("TIS FROM THE MAP " + sc.next());
+				} catch (FileNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+//				output.append("TIS FROM THE MAP " + settingsMap.get("stylesheetFolderPath"));
 				output.append("\n");
 				input.setText("");
 			}
