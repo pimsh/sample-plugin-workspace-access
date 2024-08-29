@@ -152,6 +152,11 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   private JTextArea customMessagesArea;
   public static String stylesheetsFolderPath;
   public static String configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
+  public static String configPathAbs = CustomWorkspaceAccessPluginExtension.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+  
+  public static File configFile;
+  public static String configFilePath;
+  public static String configPathAbsTrimmed;
   
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
@@ -167,18 +172,41 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 
 	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
 	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
+//	  pluginWorkspaceAccess.showInformationMessage(configPathAbs);  
+	  configPath = configPath.split("file:/")[1];
+	  configPath = configPath.replaceAll("%20", " ");
+	  configPathAbs = configPathAbs.replaceAll("%20", " ");
+	  if (null != configPathAbs && configPathAbs.length() > 0 )
+	  {
+	      int endIndex = configPathAbs.lastIndexOf("/");
+	      if (endIndex != -1)  
+	      {
+	          configPathAbsTrimmed = configPathAbs.substring(0, endIndex);
+	      }
+	  }  
+	  pluginWorkspaceAccess.showInformationMessage(configPathAbs);
+	  pluginWorkspaceAccess.showInformationMessage(configPathAbsTrimmed); 
+//	  pluginWorkspaceAccess.showInformationMessage(configPath);
 	  
-//	  configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
-	  configPath = configPath.substring(6, configPath.length());
-	  pluginWorkspaceAccess.showInformationMessage(configPath);
-	File configFile = new File(configPath);
+//	File configFile = new File(configPath);
+//	File configFile = new File(configPathAbs);
+//	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent() + "/config.txt");
+	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent().replace("\\", "/") + "/config.txt");
+//	configFile = new File(new File(configPath).getAbsoluteFile().getParent() + "/config.txt");
+	
+//	configFile = new File("C:/Users/imsh/Oxygen XML Editor 26/plugins/oxygen-plugin-workspace-access-1.0/lib/" + "/config.txt");
+	
 	try {
 		if(configFile.createNewFile()) {
-			pluginWorkspaceAccess.showInformationMessage("config file already exists");
+			pluginWorkspaceAccess.showInformationMessage("config created");
 		}
 	} catch (IOException e) {
-		pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+		pluginWorkspaceAccess.showInformationMessage("createNewFile: " + e.getMessage());
 	}
+	
+	configFilePath = configFile.getAbsolutePath();
+	configFilePath = configFilePath.replace("\\", "/");
+	
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
@@ -830,7 +858,16 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        
 	        // gotta test this location with the packed jar version
 //	        output.append((CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString()));
-	        output.append(configPath);
+//	        output.append(configPath);
+//	        output.append(configPath);
+//	        output.append("\n");
+	        
+	        
+	        output.append("configPathAbs " + configPathAbs);
+	        output.append("\n");
+	        output.append("getParent " + (configFile.getAbsoluteFile().getParent()));
+	        output.append("\n");
+	        output.append("gotten from the file " + configFile.getAbsolutePath());
 	        output.append("\n");
 		}
 	}
