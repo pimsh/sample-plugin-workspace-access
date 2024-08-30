@@ -1,6 +1,7 @@
 package com.oxygenxml.sdksamples.workspace;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
@@ -152,9 +153,10 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 /**
    * The custom messages area. A sample component added to your custom view.
    */
+	// this one's gotta stay, otherwise it crashes
   private JTextArea customMessagesArea;
 //  public static String stylesheetsFolderPath = System.getProperty("user.home") + "/OxygenPluginConfig";
-  public static String stylesheetsFolderPath = "C:/Users/imsh/testFolda";
+  public static String stylesheetsFolderPath;
   public static String configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   public static String configPathAbs = CustomWorkspaceAccessPluginExtension.class.getProtectionDomain().getCodeSource().getLocation().getPath();
   
@@ -163,21 +165,24 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
   public static HashMap<String, String> settingsMap = new HashMap<String, String>();
   
+  public static Collection<File> allStylesheets = new ArrayList<File>();
+  
+  public static Collection<Action> allActions = new ArrayList<Action>();
+  
+  
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	  ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
+	  
+	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 	  //You can set or read global options.
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
 	  //		  pluginWorkspaceAccess.setGlobalObjectProperty("can.edit.read.only.files", Boolean.FALSE);
 	  // Check In action
 
-	  //You can access the content inside each opened WSEditor depending on the current editing page (Text/Grid or Author).  
-	  // A sample action which will be mounted on the main menu, toolbar and contextual menu.
-	  
 //	  configPath = configPath.split("file:/")[1].replaceAll("%20", " ");
 //	  configPathAbs = configPathAbs.replaceAll("%20", " ");
 //	  if (null != configPathAbs && configPathAbs.length() > 0 )
@@ -214,35 +219,14 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
-	// collecting all the found files and showing them in an infomessage
-	Collection<File> allStylesheets = new ArrayList<File>();
 	
-	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
-	try {
-		Scanner sc = new Scanner(configFile);
-		if (sc.hasNext())
-			addTree(new File(stylesheetsFolderPath), allStylesheets);
-		else
-			addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
-	} catch (FileNotFoundException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	}
-//	if(configFile.length() != 0)
-//		addTree(new File(stylesheetsFolderPath), allStylesheets);
-//	else
-//		addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
-//    addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
-    
-    
-    // an iterator to loop through the FILES collection
-    java.util.Iterator<File> iterator1 = allStylesheets.iterator();
-    //pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
-    //pluginWorkspaceAccess.showInformationMessage(FilePathToURI.filepath2URI(iterator1.next().getPath()));
-    
-    // a collection for the ACTIONS to be made of the files collection
-    Collection<Action> allActions = new ArrayList<Action>();
-    
+	actionsProvider.registerAction("settingsAction", settingsAction, "2");
+	actionsProvider.registerAction("selectionSourceAction", selectionSourceAction, "3");
+	
+	// collecting all the found files and showing them in an infomessage
+//	Collection<File> allStylesheets = new ArrayList<File>();
+	
+//	stylesheetsFolderPath = System.getProperty(("user.home") + "/OxygenPluginConfig");
 	BufferedReader br = null;
 	try {
 		br = new BufferedReader(new FileReader(configFile));
@@ -269,6 +253,37 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		}
 		
 	}
+	
+//	stylesheetsFolderPath = "C:/Users/imsh/testFolda";
+	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
+	
+	// if config is empty - scanning the config folder
+	try {
+		Scanner sc = new Scanner(configFile);
+		if (sc.hasNext())
+			addTree(new File(stylesheetsFolderPath), allStylesheets);
+		else
+			addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
+	} catch (FileNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+//	if(configFile.length() != 0)
+//		addTree(new File(stylesheetsFolderPath), allStylesheets);
+//	else
+//		addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
+//    addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
+    
+    
+    // an iterator to loop through the FILES collection
+    java.util.Iterator<File> iterator1 = allStylesheets.iterator();
+    //pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
+    //pluginWorkspaceAccess.showInformationMessage(FilePathToURI.filepath2URI(iterator1.next().getPath()));
+    
+    // a collection for the ACTIONS to be made of the files collection
+//    Collection<Action> allActions = new ArrayList<Action>();
+    
+
     // loopin through files collection adding them as actions to the actions collection
     int number = 0;
     while (iterator1.hasNext())
@@ -364,6 +379,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			    while(iterator3.hasNext()) {
 			    	Action currentAction = iterator3.next();
 			    	mySecondMenu.add(currentAction);
+			    	actionsProvider.registerAction(currentAction.toString(), currentAction, "");
 			    }
 			  //mySecondMenu.add(selectionSourceAction);
 			  mySecondMenu.add(settingsAction);
@@ -441,6 +457,10 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		  /**
 		   * @see ro.sync.exml.workspace.api.standalone.ToolbarComponentsCustomizer#customizeToolbar(ro.sync.exml.workspace.api.standalone.ToolbarInfo)
 		   */
+		  
+		  
+		  
+		  
 		  public void customizeToolbar(ToolbarInfo toolbarInfo) {
 			  //The toolbar ID is defined in the "plugin.xml"
 			  if("SampleWorkspaceAccessToolbarID".equals(toolbarInfo.getToolbarID())) {
@@ -483,6 +503,12 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	  }); 
   }
   
+  
+  
+  
+  public void addAllActionsToTheDropDown() {
+  	
+  }
   // making a backup right next to the document with a date (up to seconds) in its name
  @SuppressWarnings({ "unused", "serial" })
 private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
@@ -530,7 +556,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			SettingsWindow settingsWindow = new SettingsWindow();
+			SettingsWindow settingsWindow = new SettingsWindow(pluginWorkspaceAccess);
 			settingsWindow.popItUp();
 		}
 	};
@@ -875,6 +901,11 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	
 	public class SettingsWindow {
 		
+		StandalonePluginWorkspace pluginWorkspaceAccess;
+		
+		public SettingsWindow (StandalonePluginWorkspace pluginWorkspaceAccess) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
 		public void popItUp() {
 			
 			frame = new JFrame("Settings");
@@ -888,7 +919,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
 	        input = new JTextField(20);
-	        input.addActionListener(new SettingsInputListener());
+	        input.addActionListener(new SettingsInputListener(pluginWorkspaceAccess));
 	        panel.add(new JLabel("bla"));
 	        panel.add(input);
 	        panel.add(output);
@@ -897,21 +928,25 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.setLocationByPlatform(true);
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
-	        
-	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n");
-	        output.append(settingsMap.get("stylesheetsFolderPath"));
+	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n" + "C:/Users/imsh/testFolda" + "\n");
+	        output.append("path to stylesheets: " + settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
 	
 	public static class SettingsInputListener implements ActionListener {
-
+		
+		StandalonePluginWorkspace pluginWorkspaceAccess;
+		
+		public SettingsInputListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
 //			output.setText(input.getText());
 			if(!input.getText().trim().equals("")) {
 				
-				settingsMap.put("stylesheetsFolderPath", input.getText());
+				settingsMap.put("stylesheetsFolderPath", input.getText().replace("\\", "/").replace("\"", ""));
 				
 				BufferedWriter bf = null;
 				
@@ -932,21 +967,25 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						output.append("4 " + e1.getMessage());
 					}
 				}
-				
-				try {
-					Scanner sc = new Scanner(configFile);
-					output.append("FROM THE FILE " + sc.next());
-				} catch (FileNotFoundException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				output.append("FROM THE MAP " + settingsMap.get("stylesheetsFolderPath"));
+				output.append("\n");
+				output.append("path set to: " + settingsMap.get("stylesheetsFolderPath"));
 				output.append("\n");
 				input.setText("");
 			}
 			else {
 				return;
 			}
+			
+			try {
+				Scanner sc = new Scanner(configFile);
+				if (sc.hasNext())
+					addTree(new File(stylesheetsFolderPath), allStylesheets);
+				else
+					addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
+			} catch (FileNotFoundException e1231) {
+				output.append(e1231.getMessage());
+			}
+			
 		}
 		
 	}
