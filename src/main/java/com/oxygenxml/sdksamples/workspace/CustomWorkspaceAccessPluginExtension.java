@@ -169,6 +169,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
   public static Collection<Action> allActions = new ArrayList<Action>();
   
+  public static Boolean thingsChanged;
   
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
@@ -176,7 +177,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	  
+	  thingsChanged = false;
 	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 	  //You can set or read global options.
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
@@ -220,9 +221,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
 	
-	actionsProvider.registerAction("settingsAction", settingsAction, "2");
-	actionsProvider.registerAction("selectionSourceAction", selectionSourceAction, "3");
-	
 	// collecting all the found files and showing them in an infomessage
 //	Collection<File> allStylesheets = new ArrayList<File>();
 	
@@ -256,7 +254,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	
 //	stylesheetsFolderPath = "C:/Users/imsh/testFolda";
 	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
-	
 	// if config is empty - scanning the config folder
 	try {
 		Scanner sc = new Scanner(configFile);
@@ -328,19 +325,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     
 	//Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
-				/**
-				 * Customize the author popup menu.
-				 */
-				@Override
-				public void customizeAuthorPopUpMenu(JPopupMenu popup,
-						AuthorAccess authorAccess) {
-					
-					// banana
-					//pluginWorkspaceAccess.showInformationMessage("before gettin the url");
-					URL editorURL = authorAccess.getEditorAccess().getEditorLocation();
-					// Add our custom action
-//					popup.add(selectionSourceAction);
-				}
 
 				@Override
 				public void customizeTextPopUpMenu(JPopupMenu popup,
@@ -358,30 +342,24 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				}
 			});
 
-	  // Create your own main menu and add it to Oxygen or remove one of Oxygen's menus...
 	  pluginWorkspaceAccess.addMenuBarCustomizer(new MenuBarCustomizer() {
 		  /**
 		   * @see ro.sync.exml.workspace.api.standalone.MenuBarCustomizer#customizeMainMenu(javax.swing.JMenuBar)
 		   */
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
-//			  JMenu myFirstMenu = new JMenu("Menu1");
-//			  myFirstMenu.add(selectionSourceAction);
-//			  // Add your menu before the Help menu
-//			  mainMenuBar.add(myFirstMenu, mainMenuBar.getMenuCount() - 2);
-			  
 			  JMenu mySecondMenu = new JMenu("Menu2");
 			  mySecondMenu.setOpaque(true);
-			  
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
-			    
 			  // loopin through the actions collection adding them to the dropdown
-			    while(iterator3.hasNext()) {
-			    	Action currentAction = iterator3.next();
-			    	mySecondMenu.add(currentAction);
-			    	actionsProvider.registerAction(currentAction.toString(), currentAction, "");
-			    }
+//			    while(iterator3.hasNext()) {
+//			    	Action currentAction = iterator3.next();
+//			    	mySecondMenu.add(currentAction);
+//				    actionsProvider.registerAction(currentAction.toString(), currentAction, "");
+//			    }
+			    	
 			  //mySecondMenu.add(selectionSourceAction);
+			  actionsProvider.registerAction("settingsAction", settingsAction, "");
 			  mySecondMenu.add(settingsAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
@@ -880,7 +858,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        panel.add(scroller);
 //	        inputpanel.add(input);
 	        inputpanel.add(enterButton);
-//	        inputpanel.add(showButton);
+	        inputpanel.add(showButton);
 	        
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
@@ -946,8 +924,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //			output.setText(input.getText());
 			if(!input.getText().trim().equals("")) {
 				
-				settingsMap.put("stylesheetsFolderPath", input.getText().replace("\\", "/").replace("\"", ""));
-				
 				BufferedWriter bf = null;
 				
 				try {
@@ -971,9 +947,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				output.append("path set to: " + settingsMap.get("stylesheetsFolderPath"));
 				output.append("\n");
 				input.setText("");
+				settingsMap.put("stylesheetsFolderPath", input.getText().replace("\\", "/").replace("\"", ""));
+				settingsMap.put("changed", "yes");
+				thingsChanged = true;
 			}
 			else {
-				return;
+				settingsMap.put("changed", "no");
+				thingsChanged = false;
 			}
 			
 			try {
@@ -1019,6 +999,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		public void actionPerformed(ActionEvent ev)
         {	
 			String cmd = ev.getActionCommand();
+			pluginWorkspaceAccess.showInformationMessage("HI");
 			// the run button action
 			if (RUN.equals(cmd))
             {	
@@ -1185,7 +1166,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //			  }
             input.setText("");
             input.requestFocus();
-            
         }
 		
     }
@@ -1193,7 +1173,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
   public boolean applicationClosing() {
-	  //You can reject the application closing here
+	  if (thingsChanged) {
+		  settingsMap.put("changed", "yes");
+	  }
+	  
+	  else {
+		  settingsMap.put("changed", "no");
+	  }
     return true;
   }
   
