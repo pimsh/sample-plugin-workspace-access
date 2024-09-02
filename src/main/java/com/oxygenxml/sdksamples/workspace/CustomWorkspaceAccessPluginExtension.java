@@ -212,6 +212,30 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	try {
 		if(configFile.createNewFile()) {
 			pluginWorkspaceAccess.showInformationMessage("config created: " + configFile.getAbsolutePath());
+			if(settingsMap.isEmpty()) {
+				settingsMap.put("stylesheetsFolderPath", (userHomePath + "/OxygenPluginConfig").replace("\\", "/"));
+				pluginWorkspaceAccess.showInformationMessage("from a fresh config: " + settingsMap.get("stylesheetsFolderPath"));
+				BufferedWriter bf = null;
+				
+				try {
+					bf = new BufferedWriter(new FileWriter(configFile));
+					for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
+						bf.write(entry.getKey() + " - " + entry.getValue());
+						bf.newLine();
+					}
+				} catch (IOException e1) {
+					output.append("map writer can't: " + e1.getMessage());
+				}
+				
+				finally {
+					try {
+						bf.close();
+					} catch (IOException e1) {
+						output.append("map writer can't close: " + e1.getMessage());
+					}
+				}
+			}
+			
 		}
 	} catch (IOException e) {
 		pluginWorkspaceAccess.showInformationMessage("createNewFile: " + e.getMessage());
@@ -225,20 +249,34 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //	Collection<File> allStylesheets = new ArrayList<File>();
 	
 //	stylesheetsFolderPath = System.getProperty(("user.home") + "/OxygenPluginConfig");
+	
+	// reading from the config into the settingsMap
 	BufferedReader br = null;
 	try {
 		br = new BufferedReader(new FileReader(configFile));
 		String line = null;
 		while((line = br.readLine()) != null) {
-			String[] parts = line.split(" - ");
+			String[] parts = line.split("-");
 			String name = parts[0].trim();
-			String value = parts[1].trim();
+			if(!parts[1].trim().equals("")) {
+				String value = parts[1].trim();
+					if(!name.equals("") && !value.equals(""))
+						settingsMap.put(name, value);
+					else {
+						pluginWorkspaceAccess.showInformationMessage("config file value(s) empty");
+						settingsMap.put(name, "PLACEHOLDER");
+					}
+			}
+			else {
+				pluginWorkspaceAccess.showInformationMessage("config file value(s) empty");
+				settingsMap.put(name, "PLACEHOLDER");
+			}
 			
-			if(!name.equals("") && !value.equals(""))
-				settingsMap.put(name, value);
+			
+			
 		}
 	} catch (IOException e) {
-		pluginWorkspaceAccess.showInformationMessage("1 " + e.getMessage());
+		pluginWorkspaceAccess.showInformationMessage("reader can't read: " + e.getMessage());
 	}
 	
 	finally {
@@ -246,7 +284,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			try {
 				br.close();
 			} catch (IOException e) {
-				pluginWorkspaceAccess.showInformationMessage("2 " + e.getMessage());
+				pluginWorkspaceAccess.showInformationMessage("reader can't close: " + e.getMessage());
 			}
 		}
 		
@@ -254,6 +292,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	
 //	stylesheetsFolderPath = "C:/Users/imsh/testFolda";
 	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
+	pluginWorkspaceAccess.showInformationMessage("from the map before adding: " + stylesheetsFolderPath);
+	
 	// if config is empty - scanning the config folder
 	try {
 		Scanner sc = new Scanner(configFile);
@@ -352,11 +392,13 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
 			  // loopin through the actions collection adding them to the dropdown
-//			    while(iterator3.hasNext()) {
-//			    	Action currentAction = iterator3.next();
-//			    	mySecondMenu.add(currentAction);
-//				    actionsProvider.registerAction(currentAction.toString(), currentAction, "");
-//			    }
+			  int number = 1;
+			    while(iterator3.hasNext()) {
+			    	Action currentAction = iterator3.next();
+			    	mySecondMenu.add(currentAction);
+				    actionsProvider.registerAction(currentAction.toString(), currentAction, "alt shift " + number);
+				    number++;
+			    }
 			    	
 			  //mySecondMenu.add(selectionSourceAction);
 			  actionsProvider.registerAction("settingsAction", settingsAction, "");
@@ -897,7 +939,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
 	        input = new JTextField(20);
-	        input.addActionListener(new SettingsInputListener(pluginWorkspaceAccess));
+	        input.addActionListener(new SettingsInputListener());
 	        panel.add(new JLabel("bla"));
 	        panel.add(input);
 	        panel.add(output);
@@ -906,24 +948,27 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.setLocationByPlatform(true);
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
-	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n" + "C:/Users/imsh/testFolda" + "\n");
+	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n" + "C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
 	        output.append("path to stylesheets: " + settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
 	
 	public static class SettingsInputListener implements ActionListener {
 		
-		StandalonePluginWorkspace pluginWorkspaceAccess;
-		
-		public SettingsInputListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
-			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
-		}
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
 //			output.setText(input.getText());
 			if(!input.getText().trim().equals("")) {
 				
+				settingsMap.put("stylesheetsFolderPath", input.getText().replace("\\", "/").replace("\"", ""));
+				output.append("\n");
+				output.append("path set to: " + settingsMap.get("stylesheetsFolderPath"));
+				output.append("\n");
+				input.setText("");
+				
+//				settingsMap.put("changed", "yes");
+				thingsChanged = true;
 				BufferedWriter bf = null;
 				
 				try {
@@ -933,26 +978,19 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						bf.newLine();
 					}
 				} catch (IOException e1) {
-					output.append("3 " + e1.getMessage());
+					output.append("map writer can't: " + e1.getMessage());
 				}
 				
 				finally {
 					try {
 						bf.close();
 					} catch (IOException e1) {
-						output.append("4 " + e1.getMessage());
+						output.append("map writer can't close: " + e1.getMessage());
 					}
 				}
-				output.append("\n");
-				output.append("path set to: " + settingsMap.get("stylesheetsFolderPath"));
-				output.append("\n");
-				input.setText("");
-				settingsMap.put("stylesheetsFolderPath", input.getText().replace("\\", "/").replace("\"", ""));
-				settingsMap.put("changed", "yes");
-				thingsChanged = true;
 			}
 			else {
-				settingsMap.put("changed", "no");
+//				settingsMap.put("changed", "no");
 				thingsChanged = false;
 			}
 			
@@ -1173,13 +1211,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
   public boolean applicationClosing() {
-	  if (thingsChanged) {
-		  settingsMap.put("changed", "yes");
-	  }
-	  
-	  else {
-		  settingsMap.put("changed", "no");
-	  }
+//	  if (thingsChanged) {
+//		  settingsMap.put("changed", "yes");
+//	  }
+//	  
+//	  else {
+//		  settingsMap.put("changed", "no");
+//	  }
     return true;
   }
   
