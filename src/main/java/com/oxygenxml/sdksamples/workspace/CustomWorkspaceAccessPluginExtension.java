@@ -8,6 +8,8 @@ import java.awt.GridLayout;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -46,6 +48,7 @@ import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -78,6 +81,8 @@ import com.oxygenxml.editor.swtutil.td;
 
 import ro.sync.basic.io.FilePathToURI;
 import ro.sync.basic.util.URLUtil;
+import ro.sync.basic.xml.BasicXmlUtil;
+import ro.sync.basic.xml.XMLConstants;
 import ro.sync.document.DocumentPositionedInfo;
 import ro.sync.ecss.component.AuthorClipboardObject;
 import ro.sync.ecss.extensions.api.ArgumentDescriptor;
@@ -171,9 +176,28 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
   public static HashMap<Action, String> allActionsMap = new HashMap<Action, String>();
   
-  public static Boolean thingsChanged;
-  
   public static StandalonePluginWorkspace pluginWorkspaceAccess;
+	public void writeToSettingsMap() {
+		BufferedWriter bf = null;
+		
+		try {
+			bf = new BufferedWriter(new FileWriter(configFile));
+			for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
+				bf.write(entry.getKey() + " - " + entry.getValue());
+				bf.newLine();
+			}
+		} catch (IOException e1) {
+			pluginWorkspaceAccess.showInformationMessage("map writer can't: " + e1.getMessage());
+		}
+		
+		finally {
+			try {
+				bf.close();
+			} catch (IOException e1) {
+				pluginWorkspaceAccess.showInformationMessage("map writer can't close: " + e1.getMessage());
+			}
+		}
+	}
   
 //  public static ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
@@ -182,8 +206,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	  thingsChanged = false;
 	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
+//	  BasicXmlUtil.getXPathForNode(null);
 	  //You can set or read global options.
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
 	  //		  pluginWorkspaceAccess.setGlobalObjectProperty("can.edit.read.only.files", Boolean.FALSE);
@@ -219,6 +243,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			pluginWorkspaceAccess.showInformationMessage("config created: " + configFile.getAbsolutePath().replace("\\", "/"));
 			if(settingsMap.isEmpty()) {
 				settingsMap.put("stylesheetsFolderPath", (userHomePath + "/OxygenPluginConfig").replace("\\", "/"));
+				settingsMap.put("saxonVersion", "PE");
 				BufferedWriter bf = null;
 				
 				try {
@@ -526,13 +551,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		  }
 	  }); 
   }
-  
-  
-  
-  
-  public void addAllActionsToTheDropDown() {
-  	
-  }
   // making a backup right next to the document with a date (up to seconds) in its name
  @SuppressWarnings({ "unused", "serial" })
 private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
@@ -705,15 +723,10 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							pluginWorkspaceAccess.showInformationMessage(ex2.getMessage());
 							ex2.printStackTrace();
 						}
-						try {
-							int length = textPage.getDocument().getLength();
-							textPage.select(0, length);
-							textPage.deleteSelection();
-							textPage.getDocument().insertString(0, sw.toString(), null);
-						} catch (BadLocationException ex3) {
-							// TODO Auto-generated catch block
-							ex3.printStackTrace();
-						}
+//							int length = textPage.getDocument().getLength();
+//							textPage.select(0, length);
+//							textPage.deleteSelection();
+//							textPage.getDocument().insertString(0, sw.toString(), null);
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
 							  }
@@ -777,6 +790,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
+						  
+//						  BasicXmlUtil.setTextContent(currentNode, "BLA");
 						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode);
 						  thingWindow.popItUp();
 						  
@@ -915,6 +930,10 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        input.requestFocus();
 	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home"));
 	        output.append("\n");
+	        
+	        output.append(BasicXmlUtil.getXPathForNode(node));
+	        output.append("\n");
+	        
 	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
 	        output.append("\n");
 //	        output.append(String.valueOf(paramCount) + " param");
@@ -925,6 +944,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	public class SettingsWindow {
 		
 		StandalonePluginWorkspace pluginWorkspaceAccess;
+		JComboBox comboBox1;
 		
 		public SettingsWindow (StandalonePluginWorkspace pluginWorkspaceAccess) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
@@ -942,17 +962,25 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
 	        input = new JTextField(20);
+	        
+	        String s1[] = { "PE (recommended)", "6", "HE", "EE", "Xalan" };
+	        comboBox1 = new JComboBox(s1);
+	        comboBox1.setSelectedItem(s1);
+	        comboBox1.addItemListener(new BoxItemListener());
+	        
+	        
 	        input.addActionListener(new SettingsInputListener());
-	        panel.add(new JLabel("bla"));
+	        panel.add(new JLabel("Stylesheets folder: "));
 	        panel.add(input);
 	        panel.add(output);
+	        panel.add(comboBox1);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
 	        frame.setLocationByPlatform(true);
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
-	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home") + "\n" + "C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
-	        output.append("path to stylesheets: " + settingsMap.get("stylesheetsFolderPath"));
+	        output.setText("C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
+	        output.append(settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
 	
@@ -971,7 +999,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				input.setText("");
 				
 //				settingsMap.put("changed", "yes");
-				thingsChanged = true;
 				BufferedWriter bf = null;
 				
 				try {
@@ -994,7 +1021,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			}
 			else {
 //				settingsMap.put("changed", "no");
-				thingsChanged = false;
 			}
 			
 			try {
@@ -1040,7 +1066,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		public void actionPerformed(ActionEvent ev)
         {	
 			String cmd = ev.getActionCommand();
-			pluginWorkspaceAccess.showInformationMessage("HI");
 			// the run button action
 			if (RUN.equals(cmd))
             {	
@@ -1065,16 +1090,22 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				    
 				  try {
 					  // transformation itself
-					Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
-					
-					
+					Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
+					Transformer transformer6 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
 					// loop through the map of name-textfield here
-					transformer1.clearParameters();
+					if(settingsMap.get("saxonVersion").equals("PE")) {
+						pluginWorkspaceAccess.showInformationMessage("PE");
+					}
+					if(settingsMap.get("saxonVersion").equals("6")) {
+						pluginWorkspaceAccess.showInformationMessage("6");
+					}
+					
+					transformerPE.clearParameters();
 					for (int i = 0; i < map.size(); i++) {
 						if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
-							transformer1.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+							transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
 							output.append("\n");
-							output.append(paramNames.get(i) + " " + transformer1.getParameter(paramNames.get(i)).toString());
+							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
 						}
 					}					
 					
@@ -1086,7 +1117,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //					output.append((String) transformer1.getParameter("element_xpath"));
 //					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
 					// results are being put into a StringWriter
-					transformer1.transform(xmlSrc, new StreamResult(sw));
+					transformerPE.transform(xmlSrc, new StreamResult(sw));
 					
 					int length = textPage.getDocument().getLength();
 					textPage.select(0, length);
@@ -1210,9 +1241,43 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
         }
 		
     }
-  /**
+  
+	public static class BoxItemListener implements ItemListener{
+		
+		String saxonVersion;
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			if (e.getStateChange() == ItemEvent.SELECTED) {
+		          saxonVersion = (String) e.getItem();
+		          output.append("saxon version: " + saxonVersion + "\n");
+		          settingsMap.put("saxonVersion", saxonVersion);
+		       }
+				BufferedWriter bf = null;
+				
+				try {
+					bf = new BufferedWriter(new FileWriter(configFile));
+					for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
+						bf.write(entry.getKey() + " - " + entry.getValue());
+						bf.newLine();
+					}
+				} catch (IOException e1) {
+					pluginWorkspaceAccess.showInformationMessage("map writer can't: " + e1.getMessage());
+				}
+				
+				finally {
+					try {
+						bf.close();
+					} catch (IOException e1) {
+						pluginWorkspaceAccess.showInformationMessage("map writer can't close: " + e1.getMessage());
+					}
+				}
+			}
+		}
+		
+	/**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
    */
+	
   public boolean applicationClosing() {
 //	  if (thingsChanged) {
 //		  settingsMap.put("changed", "yes");
@@ -1229,26 +1294,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //		    number++;
 //		    settingsMap.put(currentAction.toString(), String.valueOf(number));
 //	    }
-	  
-	  BufferedWriter bf = null;
-		
-		try {
-			bf = new BufferedWriter(new FileWriter(configFile));
-			for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
-				bf.write(entry.getKey() + " - " + entry.getValue());
-				bf.newLine();
-			}
-		} catch (IOException e1) {
-			pluginWorkspaceAccess.showInformationMessage("map writer can't: " + e1.getMessage());
-		}
-		
-		finally {
-			try {
-				bf.close();
-			} catch (IOException e1) {
-				pluginWorkspaceAccess.showInformationMessage("map writer can't close: " + e1.getMessage());
-			}
-		}
+	  writeToSettingsMap();
     return true;
   }
 	}
