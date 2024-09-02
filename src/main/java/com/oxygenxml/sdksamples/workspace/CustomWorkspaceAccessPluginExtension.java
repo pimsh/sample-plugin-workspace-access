@@ -1222,14 +1222,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //		  settingsMap.put("changed", "no");
 //	  }
 	  
-	  java.util.Iterator<Action> iterator4 = allActions.iterator();
-	  // loopin through the actions collection adding them to the dropdown
-	  int number = 1;
-	    while(iterator4.hasNext()) {
-	    	Action currentAction = iterator4.next();
-		    number++;
-		    settingsMap.put(currentAction.toString(), String.valueOf(number));
-	    }
+//	  java.util.Iterator<Action> iterator4 = allActions.iterator();
+//	  int number = 1;
+//	    while(iterator4.hasNext()) {
+//	    	Action currentAction = iterator4.next();
+//		    number++;
+//		    settingsMap.put(currentAction.toString(), String.valueOf(number));
+//	    }
 	  
 	  BufferedWriter bf = null;
 		
@@ -1240,14 +1239,14 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				bf.newLine();
 			}
 		} catch (IOException e1) {
-			output.append("map writer can't: " + e1.getMessage());
+			pluginWorkspaceAccess.showInformationMessage("map writer can't: " + e1.getMessage());
 		}
 		
 		finally {
 			try {
 				bf.close();
 			} catch (IOException e1) {
-				output.append("map writer can't close: " + e1.getMessage());
+				pluginWorkspaceAccess.showInformationMessage("map writer can't close: " + e1.getMessage());
 			}
 		}
     return true;
