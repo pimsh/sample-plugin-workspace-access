@@ -169,6 +169,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
   public static Collection<Action> allActions = new ArrayList<Action>();
   
+  public static HashMap<Action, String> allActionsMap = new HashMap<Action, String>();
+  
   public static Boolean thingsChanged;
   
   public static StandalonePluginWorkspace pluginWorkspaceAccess;
@@ -226,14 +228,14 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 						bf.newLine();
 					}
 				} catch (IOException e1) {
-					output.append("map writer can't: " + e1.getMessage());
+					pluginWorkspaceAccess.showInformationMessage("map writer can't: " + e1.getMessage());
 				}
 				
 				finally {
 					try {
 						bf.close();
 					} catch (IOException e1) {
-						output.append("map writer can't close: " + e1.getMessage());
+						pluginWorkspaceAccess.showInformationMessage("map writer can't close: " + e1.getMessage());
 					}
 				}
 			}
@@ -352,9 +354,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     	
     	// creating an action from the file while also loading it in as both a file and a source
     	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName(), currentFile, currentSource);
-    	
     	// adding it to an array of actions (to thwack them all into a dropdown later)
     	allActions.add(newAction);
+    	allActionsMap.put(newAction, currentFile.getName());
     }
     
 //    java.util.Iterator<Action> iterator2 = allActions.iterator();
@@ -390,7 +392,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
 			  JMenu mySecondMenu = new JMenu("Menu2");
 			  mySecondMenu.setOpaque(true);
-			  Map<String, Object> globalActionsMap = actionsProvider.getGlobalActions();
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
 			  // loopin through the actions collection adding them to the dropdown
@@ -398,7 +399,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			    while(iterator3.hasNext()) {
 			    	Action currentAction = iterator3.next();
 //			    	actionsProvider.registerAction(currentAction.toString(), currentAction, "alt shift " + number);
-			    	actionsProvider.registerAction("action" + number, currentAction, "");
+//			    	actionsProvider.registerAction("action" + number, currentAction, "");
+			    	actionsProvider.registerAction(allActionsMap.get(currentAction), currentAction, "");
 			    	mySecondMenu.add(currentAction);
 				    number++;
 			    }
