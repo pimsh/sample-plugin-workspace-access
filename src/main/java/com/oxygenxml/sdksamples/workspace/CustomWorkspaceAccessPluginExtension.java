@@ -171,6 +171,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   
   public static Boolean thingsChanged;
   
+  public static StandalonePluginWorkspace pluginWorkspaceAccess;
+  
+//  public static ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
   /**
@@ -211,10 +214,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	
 	try {
 		if(configFile.createNewFile()) {
-			pluginWorkspaceAccess.showInformationMessage("config created: " + configFile.getAbsolutePath());
+			pluginWorkspaceAccess.showInformationMessage("config created: " + configFile.getAbsolutePath().replace("\\", "/"));
 			if(settingsMap.isEmpty()) {
 				settingsMap.put("stylesheetsFolderPath", (userHomePath + "/OxygenPluginConfig").replace("\\", "/"));
-				pluginWorkspaceAccess.showInformationMessage("from a fresh config: " + settingsMap.get("stylesheetsFolderPath"));
 				BufferedWriter bf = null;
 				
 				try {
@@ -292,7 +294,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	
 //	stylesheetsFolderPath = "C:/Users/imsh/testFolda";
 	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
-	pluginWorkspaceAccess.showInformationMessage("from the map before adding: " + stylesheetsFolderPath);
 	
 	// if config is empty - scanning the config folder
 	try {
@@ -389,18 +390,19 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
 			  JMenu mySecondMenu = new JMenu("Menu2");
 			  mySecondMenu.setOpaque(true);
+			  Map<String, Object> globalActionsMap = actionsProvider.getGlobalActions();
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
 			  // loopin through the actions collection adding them to the dropdown
 			  int number = 1;
 			    while(iterator3.hasNext()) {
 			    	Action currentAction = iterator3.next();
+//			    	actionsProvider.registerAction(currentAction.toString(), currentAction, "alt shift " + number);
+			    	actionsProvider.registerAction("action" + number, currentAction, "");
 			    	mySecondMenu.add(currentAction);
-				    actionsProvider.registerAction(currentAction.toString(), currentAction, "alt shift " + number);
 				    number++;
 			    }
 			    	
-			  //mySecondMenu.add(selectionSourceAction);
 			  actionsProvider.registerAction("settingsAction", settingsAction, "");
 			  mySecondMenu.add(settingsAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
@@ -749,7 +751,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 		return new AbstractAction("action1") {
 
 			public void actionPerformed(ActionEvent actionevent) {
-				pluginWorkspaceAccess.showInformationMessage("hi");
 				  //Get the current opened XML document
 				  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 						  WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
@@ -1218,7 +1219,35 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //	  else {
 //		  settingsMap.put("changed", "no");
 //	  }
+	  
+	  java.util.Iterator<Action> iterator4 = allActions.iterator();
+	  // loopin through the actions collection adding them to the dropdown
+	  int number = 1;
+	    while(iterator4.hasNext()) {
+	    	Action currentAction = iterator4.next();
+		    number++;
+		    settingsMap.put(currentAction.toString(), String.valueOf(number));
+	    }
+	  
+	  BufferedWriter bf = null;
+		
+		try {
+			bf = new BufferedWriter(new FileWriter(configFile));
+			for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
+				bf.write(entry.getKey() + " - " + entry.getValue());
+				bf.newLine();
+			}
+		} catch (IOException e1) {
+			output.append("map writer can't: " + e1.getMessage());
+		}
+		
+		finally {
+			try {
+				bf.close();
+			} catch (IOException e1) {
+				output.append("map writer can't close: " + e1.getMessage());
+			}
+		}
     return true;
   }
-  
 	}
