@@ -893,8 +893,15 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	     // new map - parameter name as key, jtextfield as value so that we'd access their content later
 	        HashMap<String, JTextField> map = new HashMap<String, JTextField>();
 	        for (int i = 0; i < paramCount; i++) {
-	        	inputpanel.add(new JLabel(paramNames.get(i)));
+	        	
+	        	String str1 = paramNames.get(i);
+	        	  	
+//	        	inputpanel.add(new JLabel(paramNames.get(i)));
+	        	inputpanel.add(new JLabel(str1));
 	        	JTextField newField= new JTextField(10);
+	        	if(str1.toUpperCase().contains("xpath".toUpperCase())) {
+	        		newField.setText(BasicXmlUtil.getXPathForNode(node));
+	        	}
 	        	newField.setActionCommand(RUN);
 				inputpanel.add(newField);
 				map.put(paramNames.get(i), newField);
@@ -934,8 +941,8 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        output.append(BasicXmlUtil.getXPathForNode(node));
 	        output.append("\n");
 	        
-	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
-	        output.append("\n");
+//	        output.append(node.toString() + " " + node.getParentNode() + " " + node.getTextContent());
+//	        output.append("\n");
 //	        output.append(String.valueOf(paramCount) + " param");
 	        
 		}
