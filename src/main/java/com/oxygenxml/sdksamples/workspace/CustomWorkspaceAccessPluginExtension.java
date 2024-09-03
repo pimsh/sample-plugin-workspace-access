@@ -69,7 +69,8 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ScrollPaneConstants;
+import javax.swing.ScrollPaneConstants;import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
 import javax.xml.transform.Source;
@@ -122,27 +123,18 @@ import ro.sync.exml.workspace.api.standalone.ViewInfo;
 import ro.sync.exml.workspace.api.standalone.actions.MenusAndToolbarsContributorCustomizer;
 import ro.sync.exml.workspace.api.standalone.ui.ToolbarButton;
 import ro.sync.exml.workspace.api.util.XMLUtilAccess;
+import ro.sync.io.XSLTExtensionIOUtil;
 import ro.sync.util.editorvars.EditorVariables;
 import ro.sync.util.xslt.XPathElementsAndAttributesExtractor;
 import ro.sync.exml.plugin.transform.*;
 
-/**
- * Plugin extension - workspace access extension.
- */
-
 public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPluginExtension {
-/**
-   * The custom messages area. A sample component added to your custom view.
-   */
-	// this one's gotta stay, otherwise it crashes
+	
   private JTextArea customMessagesArea;
-//  public static String stylesheetsFolderPath = System.getProperty("user.home") + "/OxygenPluginConfig";
+  
   public static String stylesheetsFolderPath;
-  public static String configPath = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
-  public static String configPathAbs = CustomWorkspaceAccessPluginExtension.class.getProtectionDomain().getCodeSource().getLocation().getPath();
   
   public static File configFile;
-  public static String configPathAbsTrimmed;
   
   public static HashMap<String, String> settingsMap = new HashMap<String, String>();
   
@@ -153,7 +145,10 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   public static HashMap<Action, String> allActionsMap = new HashMap<Action, String>();
   
   public static StandalonePluginWorkspace pluginWorkspaceAccess;
-	public void writeToSettingsMap() {
+  
+  public static Processor processor = new Processor(true);
+  
+  public void writeToSettingsMap() {
 		BufferedWriter bf = null;
 		
 		try {
@@ -174,11 +169,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			}
 		}
 	}
-  
-	public static Processor processor = new Processor(true);
-//  public static ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
-//  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
-  
   /**
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
@@ -187,22 +177,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //	  pluginWorkspaceAccess.showInformationMessage("SAXON EDITION: " + processor.getSaxonEdition() + "\n" + processor.getXmlVersion() + "\n" + processor.getUnderlyingConfiguration() + "\n");
 	  
 	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
-//	  BasicXmlUtil.getXPathForNode(null);
-	  //You can set or read global options.
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
 	  //		  pluginWorkspaceAccess.setGlobalObjectProperty("can.edit.read.only.files", Boolean.FALSE);
-	  // Check In action
-
-//	  configPath = configPath.split("file:/")[1].replaceAll("%20", " ");
-//	  configPathAbs = configPathAbs.replaceAll("%20", " ");
-//	  if (null != configPathAbs && configPathAbs.length() > 0 )
-//	  {
-//	      int endIndex = configPathAbs.lastIndexOf("/");
-//	      if (endIndex != -1)  
-//	      {
-//	          configPathAbsTrimmed = configPathAbs.substring(0, endIndex);
-//	      }
-//	  }
 	
 	String userHomePath = System.getProperty("user.home").replace("\\", "/");
 	File dir = new File(userHomePath + "/OxygenPluginConfig");
@@ -249,8 +225,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	final Action backupAction = createBackupAction(pluginWorkspaceAccess);
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
 	
-//	stylesheetsFolderPath = System.getProperty(("user.home") + "/OxygenPluginConfig");
-	
 	// reading from the config into the settingsMap
 	BufferedReader br = null;
 	try {
@@ -291,7 +265,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	
 	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
 	
-	// if config is empty - scanning the config folder
+	// if config is empty - scanning the config folder for stylesheets as a default one
 	try {
 		Scanner sc = new Scanner(configFile);
 		if (sc.hasNext())
@@ -299,8 +273,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		else
 			addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
 	} catch (FileNotFoundException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
+		pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 	}
 //	if(configFile.length() != 0)
 //		addTree(new File(stylesheetsFolderPath), allStylesheets);
@@ -308,14 +281,10 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 //		addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
 //    addTree(new File("C:/Users/imsh/testFolda"), allStylesheets);
     
-    
-    // an iterator to loop through the FILES collection
+    // loop through the FILES collection
     java.util.Iterator<File> iterator1 = allStylesheets.iterator();
     
-    // a collection for the ACTIONS to be made of the files collection - is static now
-//    Collection<Action> allActions = new ArrayList<Action>();
-
-    // loopin through files collection adding them as actions to the actions collection
+    // loop through files collection adding them as actions to the actions collection
     int number = 0;
     while (iterator1.hasNext())
     {	
@@ -341,23 +310,15 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     	currentSource.setSystemId(currentFile.getPath());
     	
     	number += 1;
-    	//pluginWorkspaceAccess.showInformationMessage(number + ". " + currentFile.getName());
     	
     	// creating an action from the file while also loading it in as both a file and a source
     	Action newAction = createNewAction(pluginWorkspaceAccess, number, currentFile.getName(), currentFile, currentSource);
-    	// adding it to an array of actions (to thwack them all into a dropdown later)
+    	// adding it to an array of actions (to thwack them all in a dropdown later)
     	allActions.add(newAction);
     	allActionsMap.put(newAction, currentFile.getName());
     }
-    
-//    java.util.Iterator<Action> iterator2 = allActions.iterator();
-//    
-//    while(iterator2.hasNext()) {
-//    	Action currentAction = iterator2.next();
-//    	//pluginWorkspaceAccess.showInformationMessage(String.valueOf(currentAction));
-//    }
-    
-	//Mount the action on the contextual menus for the Text and Author modes.
+
+    //Mount the action on the contextual menus for the Text and Author modes.
 	pluginWorkspaceAccess.addMenusAndToolbarsContributorCustomizer(new MenusAndToolbarsContributorCustomizer() {
 
 				@Override
@@ -396,8 +357,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			  int number = 1;
 			    while(iterator3.hasNext()) {
 			    	Action currentAction = iterator3.next();
-//			    	actionsProvider.registerAction(currentAction.toString(), currentAction, "alt shift " + number);
-//			    	actionsProvider.registerAction("action" + number, currentAction, "");
+//			    	actionsProvider.registerAction("action" + number, currentAction, "alt shift " + number);
 			    	actionsProvider.registerAction(allActionsMap.get(currentAction), currentAction, "");
 			    	mySecondMenu.add(currentAction);
 				    number++;
@@ -770,12 +730,15 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 		  };
 	}
 	
-	private static String RUN = "Run";
+	private static String APPLY = "Apply";
 	private static String SHOW = "Show";
     static JButton enterButton;
     static JButton showButton;
     public static JTextArea output;
     public static JTextField input;
+    
+    public static JTextField newField;
+    
     static JFrame frame;
     static JPanel panel;
     
@@ -824,34 +787,46 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        
 	     // new map - parameter name as key, jtextfield as value so that we'd access their content later
 	        HashMap<String, JTextField> map = new HashMap<String, JTextField>();
+	        ThingButtonListener buttonListener = new ThingButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage, map, paramNames);
+	        
+//	        JTextField newField= new JTextField(10);
+	        newField= new JTextField(10);
 	        for (int i = 0; i < paramCount; i++) {
-	        	
 	        	String str1 = paramNames.get(i);
-	        	  	
 //	        	inputpanel.add(new JLabel(paramNames.get(i)));
 	        	inputpanel.add(new JLabel(str1));
-	        	JTextField newField= new JTextField(10);
-	        	if(str1.toUpperCase().contains("xpath".toUpperCase())) {
-	        		newField.setText(BasicXmlUtil.getXPathForNode(node));
-	        	}
-	        	newField.setActionCommand(RUN);
+	        	
+	        	newField.setActionCommand(APPLY);
 				inputpanel.add(newField);
-				map.put(paramNames.get(i), newField);
+				if(str1.toUpperCase().contains("xpath".toUpperCase())) {
+					newField.setText(BasicXmlUtil.getXPathForNode(node));
+	        		newField.addActionListener(buttonListener);
+	        	}
+				
+	        	
+//	        	if(str1.toUpperCase().contains("xpath".toUpperCase())) {
+//	        		newField.setText(BasicXmlUtil.getXPathForNode(node));
+//	        		newField.addActionListener(new ThingInputListener(pluginWorkspaceAccess));
+//	        		newField.addActionListener(buttonListener);
+//	        	}
+//	        	newField.setActionCommand(APPLY);
+//				inputpanel.add(newField);
 				// store pairs of name-textfield in the map
+				map.put(paramNames.get(i), newField);
 			}
-	        ButtonListener buttonListener = new ButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage, map, paramNames);
 	        
-	        enterButton = new JButton("Run");
+	        
+	        enterButton = new JButton("Apply");
 	        showButton = new JButton("Show");
-	        enterButton.setActionCommand(RUN);
+	        enterButton.setActionCommand(APPLY);
 	        showButton.setActionCommand(SHOW);
 	        enterButton.addActionListener(buttonListener);
 	        showButton.addActionListener(buttonListener);
 	        // enterButton.setEnabled(false);
 	        input = new JTextField(20);
-	        input.setActionCommand(RUN);
+	        input.setActionCommand(APPLY);
 //	        input.setActionCommand(SHOW);
-	        input.addActionListener(buttonListener);
+//	        input.addActionListener(buttonListener);
 	        DefaultCaret caret = (DefaultCaret) output.getCaret();
 	        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 	        panel.add(scroller);
@@ -862,14 +837,15 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
+	        newField.requestFocus();
 	        frame.setLocationByPlatform(true);
 	        // Center of the screen
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
-	        input.requestFocus();
+//	        input.requestFocus();
+//	        input.setText("BLA");
 	        output.setText(System.getProperty("user.name") + " " + System.getProperty("user.home"));
 	        output.append("\n");
-	        
 	        output.append(BasicXmlUtil.getXPathForNode(node));
 	        output.append("\n");
 	        
@@ -896,13 +872,14 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 //	        inputpanel.setLayout(new FlowLayout());
 	        inputpanel.setLayout(new BoxLayout(inputpanel, BoxLayout.Y_AXIS));
 	        
-	        enterButton = new JButton("Run");
+	        enterButton = new JButton("Apply");
 	        showButton = new JButton("Show");
-	        enterButton.setActionCommand(RUN);
+	        enterButton.setActionCommand(APPLY);
 	        showButton.setActionCommand(SHOW);
+	        showButton.addActionListener(new ThingButtonListener(pluginWorkspaceAccess));
 	        // enterButton.setEnabled(false);
 	        input = new JTextField(20);
-	        input.setActionCommand(RUN);
+	        input.setActionCommand(APPLY);
 	        input.setActionCommand(SHOW);
 	        DefaultCaret caret = (DefaultCaret) output.getCaret();
 	        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
@@ -924,6 +901,219 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 		}
 	};
 	
+	public static class ThingButtonListener implements ActionListener
+	    {	
+			StandalonePluginWorkspace pluginWorkspaceAccess;
+			AbstractAction action;
+			Source xmlSrc;
+			Source xslSrc;
+			File actionFile;
+			WSTextEditorPage textPage;
+			HashMap<String, JTextField> map;
+			ArrayList<String> paramNames;
+			
+			public ThingButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
+				this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+			}
+			
+			public ThingButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage, HashMap<String, JTextField> map, ArrayList<String> paramNames) {
+				this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+				this.xmlSrc = xmlSrc;
+				this.xslSrc = xslSrc;
+				this.actionFile = actionFile;
+				this.textPage = textPage;
+				this.map = map;
+				this.paramNames = paramNames;
+			}
+			
+			public void actionPerformed(ActionEvent ev)
+	        {	
+				String cmd = ev.getActionCommand();
+				// the run button action
+				if (APPLY.equals(cmd))
+	            {	
+					WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+					WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+//					 try {
+//					  // only one element in there
+//					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
+//						if(nodes.length > 0) {
+//							// we just cast an object as a node and it works
+//							Node currentNode = (Node) nodes[0];
+//	//						output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+//	//						output.append("\n");
+//							
+//						}
+//				} catch (XPathException e) {
+//					pluginWorkspaceAccess.showInformationMessage("debug 1 " + e.getMessage());
+//				}
+					 
+					 StringWriter sw = new StringWriter();
+					    
+					  try {
+						  // transformation itself
+						Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
+	//					Transformer transformerEE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_ENTERPRISE_EDITION);
+	//					if(settingsMap.get("saxonVersion").equals("PE")) {
+	//						pluginWorkspaceAccess.showInformationMessage("PE");
+	//					}
+	//					if(settingsMap.get("saxonVersion").equals("6")) {
+	//						pluginWorkspaceAccess.showInformationMessage("6");
+	//					}
+						
+						transformerPE.clearParameters();
+	//					transformerEE.clearParameters();
+						// loop through the map of name-textfield here
+						for (int i = 0; i < map.size(); i++) {
+							if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
+								transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+	//							transformerEE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+	//							output.append("\n");
+	//							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
+							}
+						}					
+						
+	//					if(!input.getText().trim().equals("")) {
+	//						transformer1.setParameter("element_xpath", input.getText());
+	//					}
+						
+	//					output.append((String) transformer1.getParameter("element_xpath"));
+	//					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
+						// results are being put into a StringWriter
+						transformerPE.transform(xmlSrc, new StreamResult(sw));
+	//					transformerEE.transform(xmlSrc, new StreamResult(sw));
+						int length = textPage.getDocument().getLength();
+//						textPage.getDocument().getText(0, textPage.getDocument().getLength()).replaceAll(textPage.getDocument().getText(0, length), sw.toString());
+//						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, length));
+//						pluginWorkspaceAccess.showInformationMessage(sw.toString());
+						
+						
+						textPage.select(0, length);
+						textPage.deleteSelection();
+						textPage.getDocument().insertString(0, sw.toString(), null);
+						
+	//					transformer1.clearParameters();
+						
+					} catch (TransformerException | BadLocationException e) {
+						pluginWorkspaceAccess.showInformationMessage("debug 2 " + e.getMessage());
+					}
+					  
+	                output.append("\n");
+	            }
+				
+				// the Show button action
+				if (SHOW.equals(cmd) && !input.getText().trim().equals("")) {
+					WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+					WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+					// might be better to use the initial action file here instead, since it's getting converted every run anyway
+					// OR might be better to edit the converted varying one so that the changes wouldn't remain, hm
+	//			        pluginWorkspaceAccess.showInformationMessage(sc.next());
+					try {
+						  // only one element in there
+						Object [] nodes = xmltextPage.evaluateXPath(input.getText());
+							if(nodes.length > 0) {
+								// we just cast an object as a node and it works
+								Node currentNode = (Node) nodes[0];
+								output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
+								output.append("\n");
+								
+							}
+					} catch (XPathException e) {
+						pluginWorkspaceAccess.showInformationMessage("debug 3 " + e.getMessage());
+					}
+					
+					for (int i = 0; i < map.size(); i++) {
+						if(!input.getText().trim().equals("")) {
+	//						output.append(map.get(paramNames.get(i)).getText());
+	//						output.append(transformer1.getParameter("element_xpath").toString());
+						}
+					}		
+					
+				}
+				
+	            if (!input.getText().trim().equals(""))
+	            {	
+	//            	String target = "xsl:param";
+	            	String target = input.getText();
+						
+	            	Scanner sc;
+					try {
+						Pattern p = Pattern.compile(target, Pattern.CASE_INSENSITIVE);
+						BufferedReader bf = new BufferedReader(new FileReader(actionFile));
+						int lineCounter = 0;
+						String lineBf;
+						while((lineBf = bf.readLine()) != null) {
+							lineCounter++;
+							Matcher m = p.matcher(lineBf);
+							
+							while (m.find()) {
+	//							output.append(target + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
+							}
+						}
+						
+	//					sc = new Scanner(actionFile);
+	//					int lineNumber = 0;
+	//					while (sc.hasNextLine()) {
+	//						String line = sc.nextLine();
+	//						lineNumber++;
+	//						if(line.contains("param")) {
+	//							output.append(line);
+	//						}
+	//					}
+						output.append("\n");
+						
+	//					output.append(sc.next() + " " + sc.next());
+					} catch (IOException e) {
+						pluginWorkspaceAccess.showInformationMessage("debug 4 " + e.getMessage());
+					}
+	                output.append("\n");
+	            }
+	            
+	//            StringWriter sw = new StringWriter();
+	//		    
+	//		  try {
+	//			  // transformation itself
+	//			Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+	//			// results are being put into a StringWriter
+	//			transformer1.transform(xmlSrc, new StreamResult(sw));
+	//		} catch (TransformerConfigurationException e) {
+	//			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+	//			e.printStackTrace();
+	//		} catch (TransformerException e) {
+	//			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
+	//			e.printStackTrace();
+	//		}
+	////		pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
+	////		pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
+	//		try {
+	//			int length = textPage.getDocument().getLength();
+	//			textPage.select(0, length);
+	//			textPage.deleteSelection();
+	//			textPage.getDocument().insertString(0, sw.toString(), null);
+	//		} catch (BadLocationException e) {
+	//			// TODO Auto-generated catch block
+	//			e.printStackTrace();
+	//		}
+	//		  if (textPage.hasSelection()) {
+	//			  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
+	//			  }
+	        }
+			
+	    }
+
+	public static class ThingInputListener implements ActionListener {
+		StandalonePluginWorkspace pluginWorkspaceAccess;
+		
+		public ThingInputListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			pluginWorkspaceAccess.showInformationMessage("HEYA");
+		}
+	}
+
 	public class SettingsWindow {
 		
 		StandalonePluginWorkspace pluginWorkspaceAccess;
@@ -944,6 +1134,9 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        output = new JTextArea(15, 50);
 	        output.setWrapStyleWord(true);
 	        output.setEditable(false);
+	        enterButton = new JButton("Apply");
+	        enterButton.setActionCommand(APPLY);
+	        enterButton.addActionListener(new SettingsButtonListener(pluginWorkspaceAccess));
 	        input = new JTextField(20);
 	        
 	        String s1[] = { "PE (recommended)", "6", "HE", "EE", "Xalan" };
@@ -954,6 +1147,7 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        input.addActionListener(new SettingsInputListener());
 	        panel.add(new JLabel("Stylesheets folder: "));
 	        panel.add(input);
+	        panel.add(enterButton);
 	        panel.add(output);
 	        panel.add(new JLabel("Saxon version: "));
 	        panel.add(comboBox1);
@@ -966,7 +1160,58 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        output.append("current: " + settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
-	
+	public static class SettingsButtonListener implements ActionListener {
+		StandalonePluginWorkspace pluginWorkspaceAccess;
+		
+		public SettingsButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
+			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if(!input.getText().trim().equals("")) {
+				settingsMap.put("stylesheetsFolderPath", input.getText().replace("\\", "/").replace("\"", ""));
+				output.append("\n");
+				output.append("path set to: " + settingsMap.get("stylesheetsFolderPath"));
+				output.append("\n");
+				input.setText("");
+				
+//				settingsMap.put("changed", "yes");
+				BufferedWriter bf = null;
+				
+				try {
+					bf = new BufferedWriter(new FileWriter(configFile));
+					for (Map.Entry<String, String> entry: settingsMap.entrySet()) {
+						bf.write(entry.getKey() + " - " + entry.getValue());
+						bf.newLine();
+					}
+				} catch (IOException e1) {
+					output.append("map writer can't: " + e1.getMessage());
+				}
+				
+				finally {
+					try {
+						bf.close();
+					} catch (IOException e1) {
+						output.append("map writer can't close: " + e1.getMessage());
+					}
+				}
+			}
+			else {
+//				settingsMap.put("changed", "no");
+			}
+			
+			try {
+				Scanner sc = new Scanner(configFile);
+				if (sc.hasNext())
+					addTree(new File(stylesheetsFolderPath), allStylesheets);
+				else
+					addTree(new File(System.getProperty("user.home") + "/OxygenPluginConfig"), allStylesheets);
+			} catch (FileNotFoundException e1231) {
+				output.append(e1231.getMessage());
+			}
+		}
+		
+	}
 	public static class SettingsInputListener implements ActionListener {
 		
 		@Override
@@ -1020,215 +1265,6 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 		
 	}
 	
-	public static class ButtonListener implements ActionListener
-    {	
-		StandalonePluginWorkspace pluginWorkspaceAccess;
-		AbstractAction action;
-		Source xmlSrc;
-		Source xslSrc;
-		File actionFile;
-		WSTextEditorPage textPage;
-		HashMap<String, JTextField> map;
-		ArrayList<String> paramNames;
-		
-		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
-			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
-		}
-		
-		public ButtonListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, File actionFile, WSTextEditorPage textPage, HashMap<String, JTextField> map, ArrayList<String> paramNames) {
-			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
-			this.xmlSrc = xmlSrc;
-			this.xslSrc = xslSrc;
-			this.actionFile = actionFile;
-			this.textPage = textPage;
-			this.map = map;
-			this.paramNames = paramNames;
-		}
-		
-		
-		public void actionPerformed(ActionEvent ev)
-        {	
-			String cmd = ev.getActionCommand();
-			// the run button action
-			if (RUN.equals(cmd))
-            {	
-				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
-				 try {
-				  // only one element in there
-				Object [] nodes = xmltextPage.evaluateXPath(input.getText());
-					if(nodes.length > 0) {
-						// we just cast an object as a node and it works
-						Node currentNode = (Node) nodes[0];
-//						output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
-//						output.append("\n");
-						
-					}
-			} catch (XPathException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-				 
-				 StringWriter sw = new StringWriter();
-				    
-				  try {
-					  // transformation itself
-					Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
-//					Transformer transformerEE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_ENTERPRISE_EDITION);
-//					Transformer transformer6 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
-//					// loop through the map of name-textfield here
-//					if(settingsMap.get("saxonVersion").equals("PE")) {
-//						pluginWorkspaceAccess.showInformationMessage("PE");
-//					}
-//					if(settingsMap.get("saxonVersion").equals("6")) {
-//						pluginWorkspaceAccess.showInformationMessage("6");
-//					}
-					
-					transformerPE.clearParameters();
-//					transformerEE.clearParameters();
-					for (int i = 0; i < map.size(); i++) {
-						if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
-							transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
-//							transformerEE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
-//							output.append("\n");
-//							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
-						}
-					}					
-					
-//					if(!input.getText().trim().equals("")) {
-//						transformer1.setParameter("element_xpath", input.getText());
-//					}
-					
-//					output.append((String) transformer1.getParameter("element_xpath"));
-//					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
-					// results are being put into a StringWriter
-					transformerPE.transform(xmlSrc, new StreamResult(sw));
-//					transformerEE.transform(xmlSrc, new StreamResult(sw));
-					
-					int length = textPage.getDocument().getLength();
-					textPage.select(0, length);
-//					BasicXmlUtil.setTextContent(currentNode, sw);
-					textPage.deleteSelection();
-					textPage.getDocument().insertString(0, sw.toString(), null);
-					
-//					transformer1.clearParameters();
-					
-				} catch (TransformerException | BadLocationException e) {
-					pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-					e.printStackTrace();
-				}
-				  
-                output.append("\n");
-                
-            }
-			
-			
-			// the Show button action
-			if (SHOW.equals(cmd) && !input.getText().trim().equals("")) {
-				WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-				WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
-				// might be better to use the initial action file here instead, since it's getting converted every run anyway
-				// OR might be better to edit the converted varying one so that the changes wouldn't remain, hm
-//			        pluginWorkspaceAccess.showInformationMessage(sc.next());
-				try {
-					  // only one element in there
-					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
-						if(nodes.length > 0) {
-							// we just cast an object as a node and it works
-							Node currentNode = (Node) nodes[0];
-							output.append(currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
-							output.append("\n");
-							
-						}
-				} catch (XPathException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-				for (int i = 0; i < map.size(); i++) {
-					if(!input.getText().trim().equals("")) {
-//						output.append(map.get(paramNames.get(i)).getText());
-//						output.append(transformer1.getParameter("element_xpath").toString());
-					}
-				}		
-				
-			}
-			
-            if (!input.getText().trim().equals(""))
-            {	
-            	
-//            	String target = "xsl:param";
-            	String target = input.getText();
-					
-            	Scanner sc;
-				try {
-					Pattern p = Pattern.compile(target, Pattern.CASE_INSENSITIVE);
-					BufferedReader bf = new BufferedReader(new FileReader(actionFile));
-					int lineCounter = 0;
-					String lineBf;
-					while((lineBf = bf.readLine()) != null) {
-						lineCounter++;
-						Matcher m = p.matcher(lineBf);
-						
-						while (m.find()) {
-//							output.append(target + " found at " + m.start() + "-" + m.end() + " on line " + lineCounter + " "  + "\n");
-							
-						}
-					}
-					
-//					sc = new Scanner(actionFile);
-//					int lineNumber = 0;
-//					while (sc.hasNextLine()) {
-//						String line = sc.nextLine();
-//						lineNumber++;
-//						if(line.contains("param")) {
-//							output.append(line);
-//						}
-//					}
-					output.append("\n");
-					
-//					output.append(sc.next() + " " + sc.next());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-                output.append("\n");
-            }
-            
-//            StringWriter sw = new StringWriter();
-//		    
-//		  try {
-//			  // transformation itself
-//			Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
-//			// results are being put into a StringWriter
-//			transformer1.transform(xmlSrc, new StreamResult(sw));
-//		} catch (TransformerConfigurationException e) {
-//			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-//			e.printStackTrace();
-//		} catch (TransformerException e) {
-//			pluginWorkspaceAccess.showInformationMessage(e.getMessage());
-//			e.printStackTrace();
-//		}
-////		pluginWorkspaceAccess.showInformationMessage(sw.toString() + textPage.getDocument().getLength());
-////		pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, textPage.getDocument().getLength()));
-//		try {
-//			int length = textPage.getDocument().getLength();
-//			textPage.select(0, length);
-//			textPage.deleteSelection();
-//			textPage.getDocument().insertString(0, sw.toString(), null);
-//		} catch (BadLocationException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		  if (textPage.hasSelection()) {
-//			  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-//			  }
-            input.setText("");
-            input.requestFocus();
-        }
-		
-    }
-  
 	public static class BoxItemListener implements ItemListener{
 		
 		String saxonVersion;
@@ -1262,21 +1298,6 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 		}
 		
 	public boolean applicationClosing() {
-//	  if (thingsChanged) {
-//		  settingsMap.put("changed", "yes");
-//	  }
-//	  
-//	  else {
-//		  settingsMap.put("changed", "no");
-//	  }
-	  
-//	  java.util.Iterator<Action> iterator4 = allActions.iterator();
-//	  int number = 1;
-//	    while(iterator4.hasNext()) {
-//	    	Action currentAction = iterator4.next();
-//		    number++;
-//		    settingsMap.put(currentAction.toString(), String.valueOf(number));
-//	    }
 	  writeToSettingsMap();
     return true;
   }
