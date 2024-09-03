@@ -388,7 +388,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		   */
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
 			  JMenu mySecondMenu = new JMenu("Menu2");
-			  MenuScroller.setScrollerFor(mySecondMenu);
+			  MenuScroller.setScrollerFor(mySecondMenu, 15, 31, 0, 2);
 			  mySecondMenu.setOpaque(true);
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
