@@ -2,14 +2,23 @@ package com.oxygenxml.sdksamples.workspace;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.LayoutManager;
+import java.awt.ScrollPane;
+import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -56,6 +65,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -70,51 +80,17 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.http.message.BufferedHeader;
 import org.w3c.dom.Node;
 import org.xml.sax.XMLReader;
 
-import com.google.common.io.Files;
-import com.ibm.icu.text.Edits.Iterator;
-import com.icl.saxon.om.Namespace;
 import com.oxygenxml.editor.swtutil.td;
 
+import net.sf.saxon.s9api.Processor;
 import ro.sync.basic.io.FilePathToURI;
 import ro.sync.basic.util.URLUtil;
 import ro.sync.basic.xml.BasicXmlUtil;
 import ro.sync.basic.xml.XMLConstants;
-import ro.sync.document.DocumentPositionedInfo;
-import ro.sync.ecss.component.AuthorClipboardObject;
-import ro.sync.ecss.extensions.api.ArgumentDescriptor;
-import ro.sync.ecss.extensions.api.ArgumentsMap;
-import ro.sync.ecss.extensions.api.AuthorAccess;
-import ro.sync.ecss.extensions.api.AuthorAccessDeprecated;
-import ro.sync.ecss.extensions.api.AuthorChangeTrackingController;
-import ro.sync.ecss.extensions.api.AuthorClipboardAccess;
-import ro.sync.ecss.extensions.api.AuthorConstants;
-import ro.sync.ecss.extensions.api.AuthorDocumentController;
-import ro.sync.ecss.extensions.api.AuthorListener;
-import ro.sync.ecss.extensions.api.AuthorOperation;
-import ro.sync.ecss.extensions.api.AuthorOperationException;
-import ro.sync.ecss.extensions.api.AuthorResourceBundle;
-import ro.sync.ecss.extensions.api.AuthorReviewController;
-import ro.sync.ecss.extensions.api.AuthorViewToModelInfo;
-import ro.sync.ecss.extensions.api.ClassPathResourcesAccess;
-import ro.sync.ecss.extensions.api.OptionsStorage;
-import ro.sync.ecss.extensions.api.access.AuthorEditorAccess;
-import ro.sync.ecss.extensions.api.access.AuthorOutlineAccess;
-import ro.sync.ecss.extensions.api.access.AuthorTableAccess;
-import ro.sync.ecss.extensions.api.access.AuthorUtilAccess;
-import ro.sync.ecss.extensions.api.access.AuthorWorkspaceAccess;
-import ro.sync.ecss.extensions.api.access.AuthorXMLUtilAccess;
-import ro.sync.ecss.extensions.api.highlights.Highlight;
 import ro.sync.ecss.extensions.api.node.AttrValue;
-import ro.sync.ecss.extensions.api.node.AuthorDocumentFragment;
-import ro.sync.ecss.extensions.api.node.AuthorElement;
-import ro.sync.ecss.extensions.api.node.AuthorNode;
-import ro.sync.ecss.extensions.api.structure.AuthorPopupMenuCustomizer;
-import ro.sync.ecss.extensions.api.webapp.AuthorDocumentModel;
-import ro.sync.ecss.extensions.api.webapp.AuthorOperationWithResult;
 import ro.sync.ecss.extensions.commons.operations.DeleteElementOperation;
 import ro.sync.ecss.extensions.commons.operations.MoveCaretOperation;
 import ro.sync.ecss.extensions.commons.operations.TransformOperation;
@@ -199,6 +175,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		}
 	}
   
+	public static Processor processor = new Processor(true);
 //  public static ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 //  = (CustomWorkspaceAccessPluginExtension.class.getResource(CustomWorkspaceAccessPluginExtension.class.getSimpleName() + ".class").toString());
   
@@ -206,6 +183,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
+	  
+//	  pluginWorkspaceAccess.showInformationMessage("SAXON EDITION: " + processor.getSaxonEdition() + "\n" + processor.getXmlVersion() + "\n" + processor.getUnderlyingConfiguration() + "\n");
+	  
 	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 //	  BasicXmlUtil.getXPathForNode(null);
 	  //You can set or read global options.
@@ -229,11 +209,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	if (!dir.exists()){
 	    dir.mkdirs();
 	}
-//	File configFile = new File(configPath);
-//	File configFile = new File(configPathAbs);
-//	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent() + "/config.txt");
-//	configFile = new File(new File(configPathAbs).getAbsoluteFile().getParent().replace("\\", "/") + "/config.txt");
-//	configFile = new File(new File(configPath).getAbsoluteFile().getParent() + "/config.txt");
 	  
 	String configFileName = "/" + "plugin1-" + "config" + "-" + System.getProperty("user.name");
 	configFile = new File(userHomePath + "/OxygenPluginConfig/" + configFileName);
@@ -271,11 +246,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 	}
 	
 	final Action selectionSourceAction = createShowSelectionAction(pluginWorkspaceAccess);
-	final Action anotherAction = createAnotherAction(pluginWorkspaceAccess);
+	final Action backupAction = createBackupAction(pluginWorkspaceAccess);
 	final Action settingsAction = createSettingsAction(pluginWorkspaceAccess);
-	
-	// collecting all the found files and showing them in an infomessage
-//	Collection<File> allStylesheets = new ArrayList<File>();
 	
 //	stylesheetsFolderPath = System.getProperty(("user.home") + "/OxygenPluginConfig");
 	
@@ -301,8 +273,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				settingsMap.put(name, "PLACEHOLDER");
 			}
 			
-			
-			
 		}
 	} catch (IOException e) {
 		pluginWorkspaceAccess.showInformationMessage("reader can't read: " + e.getMessage());
@@ -319,7 +289,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		
 	}
 	
-//	stylesheetsFolderPath = "C:/Users/imsh/testFolda";
 	stylesheetsFolderPath = settingsMap.get("stylesheetsFolderPath");
 	
 	// if config is empty - scanning the config folder
@@ -342,12 +311,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
     
     // an iterator to loop through the FILES collection
     java.util.Iterator<File> iterator1 = allStylesheets.iterator();
-    //pluginWorkspaceAccess.showInformationMessage(String.valueOf(allStylesheets));
-    //pluginWorkspaceAccess.showInformationMessage(FilePathToURI.filepath2URI(iterator1.next().getPath()));
     
-    // a collection for the ACTIONS to be made of the files collection
+    // a collection for the ACTIONS to be made of the files collection - is static now
 //    Collection<Action> allActions = new ArrayList<Action>();
-    
 
     // loopin through files collection adding them as actions to the actions collection
     int number = 0;
@@ -397,16 +363,22 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				@Override
 				public void customizeTextPopUpMenu(JPopupMenu popup,
 						WSTextEditorPage textPage) {
-					// Add our custom action
-//				    java.util.Iterator<Action> iterator3 = allActions.iterator();
-//				    
-//				    while(iterator3.hasNext()) {
-//				    	Action currentAction = iterator3.next();
-//				    	popup.add(currentAction);
-//				    }
-//					popup.add(selectionSourceAction);
-//					popup.add(anotherAction);
-					
+//					java.util.Iterator<Action> iterator3 = allActions.iterator();
+//					  // loopin through the actions collection adding them to the dropdown
+//					  int number = 1;
+//					    while(iterator3.hasNext()) {
+//					    	Action currentAction = iterator3.next();
+////					    	actionsProvider.registerAction(currentAction.toString(), currentAction, "alt shift " + number);
+////					    	actionsProvider.registerAction("action" + number, currentAction, "");
+//					    	actionsProvider.registerAction(allActionsMap.get(currentAction), currentAction, "");
+//					    	popup.add(currentAction);
+//						    number++;
+//					    }
+//					    	
+//					  actionsProvider.registerAction("settingsAction", settingsAction, "");
+//					  popup.add(settingsAction);
+//					  actionsProvider.registerAction("backupAction", backupAction, "");
+//					  popup.add(backupAction);
 				}
 			});
 
@@ -416,6 +388,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		   */
 		  public void customizeMainMenu(JMenuBar mainMenuBar) {
 			  JMenu mySecondMenu = new JMenu("Menu2");
+			  MenuScroller.setScrollerFor(mySecondMenu);
 			  mySecondMenu.setOpaque(true);
 			  // iterator for the actions collection
 			  java.util.Iterator<Action> iterator3 = allActions.iterator();
@@ -432,6 +405,8 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 			    	
 			  actionsProvider.registerAction("settingsAction", settingsAction, "");
 			  mySecondMenu.add(settingsAction);
+			  actionsProvider.registerAction("backupAction", backupAction, "");
+			  mySecondMenu.add(backupAction);
 			  mainMenuBar.add(mySecondMenu, mainMenuBar.getMenuCount() - 1);
 		  }
 	  });
@@ -507,9 +482,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		   * @see ro.sync.exml.workspace.api.standalone.ToolbarComponentsCustomizer#customizeToolbar(ro.sync.exml.workspace.api.standalone.ToolbarInfo)
 		   */
 		  
-		  
-		  
-		  
 		  public void customizeToolbar(ToolbarInfo toolbarInfo) {
 			  //The toolbar ID is defined in the "plugin.xml"
 			  if("SampleWorkspaceAccessToolbarID".equals(toolbarInfo.getToolbarID())) {
@@ -527,9 +499,9 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				  ToolbarButton customButton = new ToolbarButton(selectionSourceAction, true);
 				  comps.add(customButton);
 				  toolbarInfo.setComponents(comps.toArray(new JComponent[0]));
-				  ToolbarButton customButton2 = new ToolbarButton(anotherAction, true);
-				  comps.add(customButton2);
-				  toolbarInfo.setComponents(comps.toArray(new JComponent[0]));
+//				  ToolbarButton customButton2 = new ToolbarButton(backupAction, true);
+//				  comps.add(customButton2);
+//				  toolbarInfo.setComponents(comps.toArray(new JComponent[0]));
 			  } 
 		  }
 	  });
@@ -553,41 +525,29 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   }
   // making a backup right next to the document with a date (up to seconds) in its name
  @SuppressWarnings({ "unused", "serial" })
-private AbstractAction createAnotherAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	 return new AbstractAction("backup + read") {
+private AbstractAction createBackupAction(final StandalonePluginWorkspace pluginWorkspaceAccess) {
+	 return new AbstractAction("Backup") {
 		 public void actionPerformed(ActionEvent actionEvent) {
 			 WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 			 WSTextEditorPage textPage = (WSTextEditorPage) editorAccess.getCurrentPage();
 			 
 			 // getting a date for the rename
 			 String date = getDate();
-			 
 			 // editorAccess.save();
-			 //current path where the file sits
+			 // current path where the file sits
 			 String path = String.valueOf(editorAccess.getEditorLocation());
-			 // cutting off the "file:" (oxygen does that) from the path
+			 // cutting off the "file:"
 			 File file1 = new File(path.substring(6, path.length()));
 			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
-			 
-//			 pluginWorkspaceAccess.showInformationMessage(file1.getPath() + " " + file2.getPath());
 			 
 			 try {
 				copyFileUsingChannel(file1, file2);
 				
 			} catch (IOException e) {
-				pluginWorkspaceAccess.showInformationMessage("DOESN'T WORK.");
-				e.printStackTrace();
+				pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 			}
-			
-			// reading the first line of the copy cuz why not
-	        Scanner sc;
-			try {
-				sc = new Scanner(file1);
-//		        pluginWorkspaceAccess.showInformationMessage(sc.next());
-			} catch (FileNotFoundException e) {
-//				pluginWorkspaceAccess.showInformationMessage("NO FILE TO READ.");
-				e.printStackTrace();
-			}
+			 
+			pluginWorkspaceAccess.showInformationMessage("Backup created: " + file2.getPath().replace("\\", "/"));
 		 }
 	 };
  }
@@ -662,20 +622,13 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			    try {
 					// this, for some reason, returns the current thing the caret is sitting on, only one element in there
 					Object [] nodes = xmltextPage.evaluateXPath(".");
-//					Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
-//					Object [] nodes = xmltextPage.evaluateXPath(stringThere);
-//					Object [] allNodes = xmltextPage.evaluateXPath("//node()");
 					
 						if(nodes.length > 0) {
 							// we just cast an object as a node and it works
 							currentNode = (Node) nodes[0];
-//							pluginWorkspaceAccess.showInformationMessage("action1 " + currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
-//							pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 						}
-//					pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
 				} catch (XPathException e11) {
-					// TODO Auto-generated catch block
-					e11.printStackTrace();
+					pluginWorkspaceAccess.showInformationMessage(e11.getMessage());
 				}
 			    
 			    try {
@@ -710,7 +663,6 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 					}
 					
 					else {
-					    
 						  try {
 							  // transformation itself
 							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
@@ -718,22 +670,16 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 							transformer1.transform(xmlSrc, new StreamResult(sw));
 						} catch (TransformerConfigurationException ex1) {
 							pluginWorkspaceAccess.showInformationMessage(ex1.getMessage());
-							ex1.printStackTrace();
 						} catch (TransformerException ex2) {
 							pluginWorkspaceAccess.showInformationMessage(ex2.getMessage());
-							ex2.printStackTrace();
 						}
-//							int length = textPage.getDocument().getLength();
-//							textPage.select(0, length);
-//							textPage.deleteSelection();
-//							textPage.getDocument().insertString(0, sw.toString(), null);
+							int length = textPage.getDocument().getLength();
+							textPage.select(0, length);
+							textPage.deleteSelection();
+							textPage.getDocument().insertString(0, sw.toString(), null);
 						  if (textPage.hasSelection()) {
 							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
 							  }
-//		                output.append(input.getText());
-//		                if (input.getText().trim().equals(testString)) output.append(" = " + testString);
-//		                else output.append(" != " + testString);
-		                output.append("\n");
 					}
 					
 //					sc = new Scanner(actionFile);
@@ -745,18 +691,9 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //							output.append(line);
 //						}
 //					}
-					output.append("\n");
-					
-//					output.append(sc.next() + " " + sc.next());
-				} catch (IOException er) {
-					// TODO Auto-generated catch block
-					er.printStackTrace();
+				} catch (IOException | BadLocationException er) {
+					pluginWorkspaceAccess.showInformationMessage(er.getMessage());
 				}
-			    
-			    
-//				ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode, xmlSrc, xslSrc, actionFile, textPage);
-//				  thingWindow.popItUp();
-				  
 			}
 		};
 	}
@@ -775,25 +712,20 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 						  try {
 							// this, for some reason, returns the current thing the caret is sitting on, only one element in there
 							Object [] nodes = xmltextPage.evaluateXPath(".");
-//							Object [] nodes = xmltextPage.evaluateXPath("/book/bookinfo[1]/keywordset[1]/keyword[11]");
-//							Object [] nodes = xmltextPage.evaluateXPath(stringThere);
-//							Object [] allNodes = xmltextPage.evaluateXPath("//node()");
 							
 								if(nodes.length > 0) {
 									// we just cast an object as a node and it works
 									currentNode = (Node) nodes[0];
-//									pluginWorkspaceAccess.showInformationMessage("action1 " + currentNode.toString() +  currentNode.getParentNode() + currentNode.getParentNode().getParentNode() + currentNode.getTextContent());
 //									pluginWorkspaceAccess.showInformationMessage(currentNode.getTextContent());
 								}
 //							pluginWorkspaceAccess.showInformationMessage(xmltextPage.findElementsByXPath(".").toString());
 						} catch (XPathException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+							pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 						}
 						  
 //						  BasicXmlUtil.setTextContent(currentNode, "BLA");
 						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess, currentNode);
-						  thingWindow.popItUp();
+						  thingWindow.popItUpLite();
 						  
 //						  ThingWindow thingWindow = new ThingWindow(pluginWorkspaceAccess);
 //						  thingWindow.popItUp();
@@ -918,14 +850,14 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        // enterButton.setEnabled(false);
 	        input = new JTextField(20);
 	        input.setActionCommand(RUN);
-	        input.setActionCommand(SHOW);
+//	        input.setActionCommand(SHOW);
 	        input.addActionListener(buttonListener);
 	        DefaultCaret caret = (DefaultCaret) output.getCaret();
 	        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 	        panel.add(scroller);
 //	        inputpanel.add(input);
 	        inputpanel.add(enterButton);
-	        inputpanel.add(showButton);
+//	        inputpanel.add(showButton);
 	        
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
@@ -945,6 +877,50 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //	        output.append("\n");
 //	        output.append(String.valueOf(paramCount) + " param");
 	        
+		}
+	
+		public void popItUpLite() {
+			frame = new JFrame("action1");
+	        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	        frame.setResizable(true);
+	        panel = new JPanel();
+	        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+	        panel.setOpaque(true);
+	        output = new JTextArea(15, 50);
+	        output.setWrapStyleWord(true);
+	        output.setEditable(false);
+	        JScrollPane scroller = new JScrollPane(output);
+	        scroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+	        scroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+	        JPanel inputpanel = new JPanel();
+//	        inputpanel.setLayout(new FlowLayout());
+	        inputpanel.setLayout(new BoxLayout(inputpanel, BoxLayout.Y_AXIS));
+	        
+	        enterButton = new JButton("Run");
+	        showButton = new JButton("Show");
+	        enterButton.setActionCommand(RUN);
+	        showButton.setActionCommand(SHOW);
+	        // enterButton.setEnabled(false);
+	        input = new JTextField(20);
+	        input.setActionCommand(RUN);
+	        input.setActionCommand(SHOW);
+	        DefaultCaret caret = (DefaultCaret) output.getCaret();
+	        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+	        panel.add(scroller);
+//	        inputpanel.add(input);
+	        inputpanel.add(enterButton);
+	        inputpanel.add(showButton);
+	        
+	        panel.add(inputpanel);
+	        frame.getContentPane().add(BorderLayout.CENTER, panel);
+	        frame.pack();
+	        frame.setLocationByPlatform(true);
+	        // Center of the screen
+	        frame.setLocationRelativeTo(null);
+	        frame.setVisible(true);
+	        input.requestFocus();
+	        output.append(BasicXmlUtil.getXPathForNode(node));
+	        output.append("\n");
 		}
 	};
 	
@@ -975,11 +951,11 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        comboBox1.setSelectedItem(s1);
 	        comboBox1.addItemListener(new BoxItemListener());
 	        
-	        
 	        input.addActionListener(new SettingsInputListener());
 	        panel.add(new JLabel("Stylesheets folder: "));
 	        panel.add(input);
 	        panel.add(output);
+	        panel.add(new JLabel("Saxon version: "));
 	        panel.add(comboBox1);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
@@ -987,7 +963,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 	        frame.setLocationRelativeTo(null);
 	        frame.setVisible(true);
 	        output.setText("C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
-	        output.append(settingsMap.get("stylesheetsFolderPath"));
+	        output.append("current: " + settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
 	
@@ -1097,25 +1073,27 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 				    
 				  try {
 					  // transformation itself
-					Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
-					Transformer transformer6 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
-					// loop through the map of name-textfield here
-					if(settingsMap.get("saxonVersion").equals("PE")) {
-						pluginWorkspaceAccess.showInformationMessage("PE");
-					}
-					if(settingsMap.get("saxonVersion").equals("6")) {
-						pluginWorkspaceAccess.showInformationMessage("6");
-					}
+					Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
+//					Transformer transformerEE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_ENTERPRISE_EDITION);
+//					Transformer transformer6 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_6);
+//					// loop through the map of name-textfield here
+//					if(settingsMap.get("saxonVersion").equals("PE")) {
+//						pluginWorkspaceAccess.showInformationMessage("PE");
+//					}
+//					if(settingsMap.get("saxonVersion").equals("6")) {
+//						pluginWorkspaceAccess.showInformationMessage("6");
+//					}
 					
 					transformerPE.clearParameters();
+//					transformerEE.clearParameters();
 					for (int i = 0; i < map.size(); i++) {
 						if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
 							transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
-							output.append("\n");
-							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
+//							transformerEE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+//							output.append("\n");
+//							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
 						}
 					}					
-					
 					
 //					if(!input.getText().trim().equals("")) {
 //						transformer1.setParameter("element_xpath", input.getText());
@@ -1125,9 +1103,11 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 //					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
 					// results are being put into a StringWriter
 					transformerPE.transform(xmlSrc, new StreamResult(sw));
+//					transformerEE.transform(xmlSrc, new StreamResult(sw));
 					
 					int length = textPage.getDocument().getLength();
 					textPage.select(0, length);
+//					BasicXmlUtil.setTextContent(currentNode, sw);
 					textPage.deleteSelection();
 					textPage.getDocument().insertString(0, sw.toString(), null);
 					
@@ -1281,11 +1261,7 @@ private AbstractAction createAnotherAction(final StandalonePluginWorkspace plugi
 			}
 		}
 		
-	/**
-   * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationClosing()
-   */
-	
-  public boolean applicationClosing() {
+	public boolean applicationClosing() {
 //	  if (thingsChanged) {
 //		  settingsMap.put("changed", "yes");
 //	  }
