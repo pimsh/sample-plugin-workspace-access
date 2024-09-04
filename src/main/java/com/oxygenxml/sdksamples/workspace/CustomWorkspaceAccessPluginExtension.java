@@ -458,7 +458,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 				  
 				  //Add your own toolbar button using our "ro.sync.exml.workspace.api.standalone.ui.ToolbarButton" API component
 				  ToolbarButton customButton = new ToolbarButton(selectionSourceAction, true);
-				  comps.add(customButton);
+//				  comps.add(customButton);
 				  toolbarInfo.setComponents(comps.toArray(new JComponent[0]));
 //				  ToolbarButton customButton2 = new ToolbarButton(backupAction, true);
 //				  comps.add(customButton2);
@@ -592,6 +592,9 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 					pluginWorkspaceAccess.showInformationMessage(e11.getMessage());
 				}
 			    
+		    	
+				
+			    
 			    try {
 					Pattern p = Pattern.compile("param name=\".*?\"", Pattern.CASE_INSENSITIVE);
 //					Pattern p = Pattern.compile("xsl\\:param", Pattern.CASE_INSENSITIVE);
@@ -601,21 +604,40 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 					String lineBf;
 					ArrayList<Object> matches = new ArrayList<Object>();
 					ArrayList<String> names = new ArrayList<>();
-					while((lineBf = bf.readLine()) != null) {
-						lineCounter++;
-						Matcher m = p.matcher(lineBf);
-						
-						while (m.find()) {
-							// adding an element to an array that'd provide us with the number of the params
-							matches.add(m.start());
-							// adding a name of the param in a dumb way
-							names.add(lineBf.substring(m.start()+12, m.end()-1));
-							
-							// should have the parser find the 'name="..."' in a string with param, no matter where it sits
-//							names.add(lineBf.substring(m.start()+12, m.end()-1) + " " + lineCounter + " " + lineBf.indexOf("name=\""));
-//							names.add(lineBf.substring(m.start()+12, m.end()-1) + " " + lineBf.indexOf("name=\"") + lineBf.lastIndexOf("name=\".*?\""));
-							
+					
+//					while((lineBf = bf.readLine()) != null) {
+//						lineCounter++;
+//						Matcher m = p.matcher(lineBf);
+//						
+//						while (m.find()) {
+//							// adding an element to an array that'd provide us with the number of the params
+//							matches.add(m.start());
+//							// adding a name of the param in a dumb way
+//							names.add(lineBf.substring(m.start()+12, m.end()-1));
+//							
+//							// should have the parser find the 'name="..."' in a string with param, no matter where it sits
+////							names.add(lineBf.substring(m.start()+12, m.end()-1) + " " + lineCounter + " " + lineBf.indexOf("name=\""));
+////							names.add(lineBf.substring(m.start()+12, m.end()-1) + " " + lineBf.indexOf("name=\"") + lineBf.lastIndexOf("name=\".*?\""));
+//							
+//						}
+//					}
+					
+					Scanner sc;
+					try {
+						sc = new Scanner(actionFile);
+						while (sc.hasNextLine()) {
+							String line = sc.nextLine();
+							if(line.contains("xsl:param")) {
+								Pattern p1 = Pattern.compile("name=\".*?\"", Pattern.CASE_INSENSITIVE);
+								Matcher m = p1.matcher(line);
+								while (m.find()) {
+									matches.add(m.start());
+									names.add(line.substring(m.start() + 6, m.end() - 1));
+								}
+							}
 						}
+					} catch (FileNotFoundException e1) {
+						pluginWorkspaceAccess.showInformationMessage(e1.getMessage());
 					}
 					
 					if (matches.size() > 0) {
@@ -629,11 +651,9 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
 							// results are being put into a StringWriter
 							transformer1.transform(xmlSrc, new StreamResult(sw));
-						} catch (TransformerConfigurationException ex1) {
+						} catch (TransformerException ex1) {
 							pluginWorkspaceAccess.showInformationMessage(ex1.getMessage());
-						} catch (TransformerException ex2) {
-							pluginWorkspaceAccess.showInformationMessage(ex2.getMessage());
-						}
+						} 
 							int length = textPage.getDocument().getLength();
 							textPage.select(0, length);
 							textPage.deleteSelection();
@@ -643,15 +663,6 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 							  }
 					}
 					
-//					sc = new Scanner(actionFile);
-//					int lineNumber = 0;
-//					while (sc.hasNextLine()) {
-//						String line = sc.nextLine();
-//						lineNumber++;
-//						if(line.contains("param")) {
-//							output.append(line);
-//						}
-//					}
 				} catch (IOException | BadLocationException er) {
 					pluginWorkspaceAccess.showInformationMessage(er.getMessage());
 				}
@@ -1171,7 +1182,7 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 //	        frame.setLocationRelativeTo(null);
 //	        frame.setLocationRelativeTo(customMessagesArea);
 	        frame.setVisible(true);
-	        output.setText("C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
+//	        output.setText("C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
 	        output.append("current: " + settingsMap.get("stylesheetsFolderPath"));
 		}
 	}
