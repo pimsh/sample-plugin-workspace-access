@@ -592,9 +592,6 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 					pluginWorkspaceAccess.showInformationMessage(e11.getMessage());
 				}
 			    
-		    	
-				
-			    
 			    try {
 					Pattern p = Pattern.compile("param name=\".*?\"", Pattern.CASE_INSENSITIVE);
 //					Pattern p = Pattern.compile("xsl\\:param", Pattern.CASE_INSENSITIVE);
@@ -646,24 +643,26 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 					}
 					
 					else {
-						  try {
-							  // transformation itself
-							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
-							// results are being put into a StringWriter
-							transformer1.transform(xmlSrc, new StreamResult(sw));
-						} catch (TransformerException ex1) {
-							pluginWorkspaceAccess.showInformationMessage(ex1.getMessage());
-						} 
-							int length = textPage.getDocument().getLength();
-							textPage.select(0, length);
-							textPage.deleteSelection();
-							textPage.getDocument().insertString(0, sw.toString(), null);
-						  if (textPage.hasSelection()) {
-							  pluginWorkspaceAccess.showInformationMessage(textPage.getSelectedText());
-							  }
+						
+						applyStylesheet(pluginWorkspaceAccess, xmlSrc, xslSrc, xmltextPage, null, names);
+						
+//						  try {
+//							  // transformation itself
+//							Transformer transformer1 = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION); //TRANSFORMER_SAXON_6
+//							// results are being put into a StringWriter
+//							transformer1.transform(xmlSrc, new StreamResult(sw));
+////							transformer1.transform(xmlSrc, new StreamResult(textPage.toString()));
+//						} catch (TransformerException ex1) {
+//							pluginWorkspaceAccess.showInformationMessage(ex1.getMessage());
+//						} 
+//							int length = textPage.getDocument().getLength();
+//							textPage.select(0, length);
+//							textPage.deleteSelection();
+//							textPage.getDocument().insertString(0, sw.toString(), null);
+
 					}
 					
-				} catch (IOException | BadLocationException er) {
+				} catch (IOException er) {
 					pluginWorkspaceAccess.showInformationMessage(er.getMessage());
 				}
 			}
@@ -945,8 +944,10 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 				// the run button action
 				if (APPLY.equals(cmd))
 	            {	
-					WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
-					WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
+					applyStylesheet(pluginWorkspaceAccess, xmlSrc, xslSrc, textPage, map, paramNames);
+					
+//					WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
+//					WSXMLTextEditorPage xmltextPage = (WSXMLTextEditorPage) editorAccess.getCurrentPage();
 //					 try {
 //					  // only one element in there
 //					Object [] nodes = xmltextPage.evaluateXPath(input.getText());
@@ -961,57 +962,57 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 //					pluginWorkspaceAccess.showInformationMessage("debug 1 " + e.getMessage());
 //				}
 					 
-					 StringWriter sw = new StringWriter();
+//					 StringWriter sw = new StringWriter();
 					    
-					  try {
-						  // transformation itself
-						Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
-	//					Transformer transformerEE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_ENTERPRISE_EDITION);
-	//					if(settingsMap.get("saxonVersion").equals("PE")) {
-	//						pluginWorkspaceAccess.showInformationMessage("PE");
-	//					}
-	//					if(settingsMap.get("saxonVersion").equals("6")) {
-	//						pluginWorkspaceAccess.showInformationMessage("6");
-	//					}
-						
-						transformerPE.clearParameters();
-	//					transformerEE.clearParameters();
-						// loop through the map of name-textfield here
-						for (int i = 0; i < map.size(); i++) {
-							if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
-								transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
-	//							transformerEE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
-	//							output.append("\n");
-	//							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
-							}
-						}					
-						
-	//					if(!input.getText().trim().equals("")) {
-	//						transformer1.setParameter("element_xpath", input.getText());
-	//					}
-						
-	//					output.append((String) transformer1.getParameter("element_xpath"));
-	//					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
-						// results are being put into a StringWriter
-						transformerPE.transform(xmlSrc, new StreamResult(sw));
-	//					transformerEE.transform(xmlSrc, new StreamResult(sw));
-						int length = textPage.getDocument().getLength();
-//						textPage.getDocument().getText(0, textPage.getDocument().getLength()).replaceAll(textPage.getDocument().getText(0, length), sw.toString());
-//						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, length));
-//						pluginWorkspaceAccess.showInformationMessage(sw.toString());
-						
-						
-						textPage.select(0, length);
-						textPage.deleteSelection();
-						textPage.getDocument().insertString(0, sw.toString(), null);
-						
-	//					transformer1.clearParameters();
-						
-					} catch (TransformerException | BadLocationException e) {
-						pluginWorkspaceAccess.showInformationMessage("debug 2 " + e.getMessage());
-					}
+//					  try {
+//						  // transformation itself
+//						Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
+//	//					Transformer transformerEE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_ENTERPRISE_EDITION);
+//	//					if(settingsMap.get("saxonVersion").equals("PE")) {
+//	//						pluginWorkspaceAccess.showInformationMessage("PE");
+//	//					}
+//	//					if(settingsMap.get("saxonVersion").equals("6")) {
+//	//						pluginWorkspaceAccess.showInformationMessage("6");
+//	//					}
+//						
+//						transformerPE.clearParameters();
+//	//					transformerEE.clearParameters();
+//						// loop through the map of name-textfield here
+//						for (int i = 0; i < map.size(); i++) {
+//							if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
+//								transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+//	//							transformerEE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+//	//							output.append("\n");
+//	//							output.append(paramNames.get(i) + " " + transformerPE.getParameter(paramNames.get(i)).toString());
+//							}
+//						}					
+//						
+//	//					if(!input.getText().trim().equals("")) {
+//	//						transformer1.setParameter("element_xpath", input.getText());
+//	//					}
+//						
+//	//					output.append((String) transformer1.getParameter("element_xpath"));
+//	//					pluginWorkspaceAccess.showInformationMessage(transformer1.getParameter("element_xpath").toString());
+//						// results are being put into a StringWriter
+////					transformerEE.transform(xmlSrc, new StreamResult(sw));
+//						transformerPE.transform(xmlSrc, new StreamResult(textPage.toString()));
+//
+//						int length = textPage.getDocument().getLength();
+////						textPage.getDocument().getText(0, textPage.getDocument().getLength()).replaceAll(textPage.getDocument().getText(0, length), sw.toString());
+////						pluginWorkspaceAccess.showInformationMessage(textPage.getDocument().getText(0, length));
+////						pluginWorkspaceAccess.showInformationMessage(sw.toString());
+//						
+//						
+//						textPage.select(0, length);
+////						textPage.deleteSelection();
+////						textPage.getDocument().insertString(0, sw.toString(), null);
+//						
+//	//					transformer1.clearParameters();
+//						
+//					} catch (TransformerException e) {
+//						pluginWorkspaceAccess.showInformationMessage("debug 2 " + e.getMessage());
+//					}
 					  
-	                output.append("\n");
 	            }
 				
 				// the Show button action
@@ -1133,9 +1134,7 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			
 			applyStylesheet(pluginWorkspaceAccess, xmlSrc, xslSrc, textPage, map, paramNames);
-			
 		}
 	}
 
@@ -1330,19 +1329,25 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 			Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
 			
 			transformerPE.clearParameters();
-			for (int i = 0; i < map.size(); i++) {
-				if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
-					transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+			
+//			if(map.size() > 0) {
+			if(map != null) {
+				for (int i = 0; i < map.size(); i++) {
+					if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
+						transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+					}
 				}
-			}					
+			}
 			transformerPE.transform(xmlSrc, new StreamResult(sw));
+//			transformerPE.transform(xmlSrc, new StreamResult(textPage.toString()));
+			
 			int length = textPage.getDocument().getLength();
 			textPage.select(0, length);
 			textPage.deleteSelection();
 			textPage.getDocument().insertString(0, sw.toString(), null);
 			
 		} catch (TransformerException | BadLocationException e) {
-			pluginWorkspaceAccess.showInformationMessage("debug 2 " + e.getMessage());
+			pluginWorkspaceAccess.showInformationMessage(xslSrc.getSystemId() + ": " + e.getMessage());
 		}
 	}
 		
