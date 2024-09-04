@@ -3,6 +3,7 @@ package com.oxygenxml.sdksamples.workspace;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -175,7 +176,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
 	  
 //	  pluginWorkspaceAccess.showInformationMessage("SAXON EDITION: " + processor.getSaxonEdition() + "\n" + processor.getXmlVersion() + "\n" + processor.getUnderlyingConfiguration() + "\n");
-	  
+	  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
 	  //		  pluginWorkspaceAccess.setGlobalObjectProperty("can.edit.read.only.files", Boolean.FALSE);
@@ -788,19 +789,19 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	     // new map - parameter name as key, jtextfield as value so that we'd access their content later
 	        HashMap<String, JTextField> map = new HashMap<String, JTextField>();
 	        ThingButtonListener buttonListener = new ThingButtonListener(pluginWorkspaceAccess, xmlSrc, xslSrc, actionFile, textPage, map, paramNames);
-	        
-//	        JTextField newField= new JTextField(10);
+	        JTextField fieldToFocusOn = null;
 	        newField= new JTextField(10);
 	        for (int i = 0; i < paramCount; i++) {
 	        	String str1 = paramNames.get(i);
 //	        	inputpanel.add(new JLabel(paramNames.get(i)));
 	        	inputpanel.add(new JLabel(str1));
-	        	
-	        	newField.setActionCommand(APPLY);
+	        	JTextField newField = new JTextField();
 				inputpanel.add(newField);
 				if(str1.toUpperCase().contains("xpath".toUpperCase())) {
 					newField.setText(BasicXmlUtil.getXPathForNode(node));
 	        		newField.addActionListener(buttonListener);
+	        		newField.addActionListener(new ThingInputListener(pluginWorkspaceAccess, xmlSrc, xslSrc, textPage, map, paramNames));
+	        		fieldToFocusOn = newField;
 	        	}
 				
 	        	
@@ -837,10 +838,11 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        panel.add(inputpanel);
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
-	        newField.requestFocus();
+	        fieldToFocusOn.requestFocus();
 	        frame.setLocationByPlatform(true);
-	        // Center of the screen
-	        frame.setLocationRelativeTo(null);
+	        // Center of the DEFAULT screen
+//	        frame.setLocationRelativeTo(null);
+//	        frame.setLocationRelativeTo(customMessagesArea);
 	        frame.setVisible(true);
 //	        input.requestFocus();
 //	        input.setText("BLA");
@@ -892,8 +894,8 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
 	        frame.setLocationByPlatform(true);
-	        // Center of the screen
-	        frame.setLocationRelativeTo(null);
+//	        frame.setLocationRelativeTo(null);
+//	        frame.setLocationRelativeTo(customMessagesArea);
 	        frame.setVisible(true);
 	        input.requestFocus();
 	        output.append(BasicXmlUtil.getXPathForNode(node));
@@ -1103,14 +1105,26 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 
 	public static class ThingInputListener implements ActionListener {
 		StandalonePluginWorkspace pluginWorkspaceAccess;
+		Source xmlSrc;
+		Source xslSrc;
+		WSTextEditorPage textPage;
+		HashMap<String, JTextField> map;
+		ArrayList<String> paramNames;
 		
-		public ThingInputListener (StandalonePluginWorkspace pluginWorkspaceAccess) {
+		public ThingInputListener (StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, WSTextEditorPage textPage, HashMap<String, JTextField> map, ArrayList<String> paramNames) {
 			this.pluginWorkspaceAccess = pluginWorkspaceAccess;
+			this.xmlSrc = xmlSrc;
+			this.xslSrc = xslSrc;
+			this.textPage = textPage;
+			this.map = map;
+			this.paramNames = paramNames;
 		}
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			pluginWorkspaceAccess.showInformationMessage("HEYA");
+			
+			applyStylesheet(pluginWorkspaceAccess, xmlSrc, xslSrc, textPage, map, paramNames);
+			
 		}
 	}
 
@@ -1154,7 +1168,8 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        frame.getContentPane().add(BorderLayout.CENTER, panel);
 	        frame.pack();
 	        frame.setLocationByPlatform(true);
-	        frame.setLocationRelativeTo(null);
+//	        frame.setLocationRelativeTo(null);
+//	        frame.setLocationRelativeTo(customMessagesArea);
 	        frame.setVisible(true);
 	        output.setText("C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
 	        output.append("current: " + settingsMap.get("stylesheetsFolderPath"));
@@ -1296,6 +1311,29 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 				}
 			}
 		}
+	
+	public static void applyStylesheet(StandalonePluginWorkspace pluginWorkspaceAccess, Source xmlSrc, Source xslSrc, WSTextEditorPage textPage, HashMap<String, JTextField> map, ArrayList<String> paramNames) {
+		 StringWriter sw = new StringWriter();
+		    
+		  try {
+			Transformer transformerPE = pluginWorkspaceAccess.getXMLUtilAccess().createXSLTTransformer(xslSrc, new URL[0],XMLUtilAccess.TRANSFORMER_SAXON_PROFESSIONAL_EDITION);
+			
+			transformerPE.clearParameters();
+			for (int i = 0; i < map.size(); i++) {
+				if(!map.get(paramNames.get(i)).getText().trim().equals("")) {
+					transformerPE.setParameter(paramNames.get(i), map.get(paramNames.get(i)).getText());
+				}
+			}					
+			transformerPE.transform(xmlSrc, new StreamResult(sw));
+			int length = textPage.getDocument().getLength();
+			textPage.select(0, length);
+			textPage.deleteSelection();
+			textPage.getDocument().insertString(0, sw.toString(), null);
+			
+		} catch (TransformerException | BadLocationException e) {
+			pluginWorkspaceAccess.showInformationMessage("debug 2 " + e.getMessage());
+		}
+	}
 		
 	public boolean applicationClosing() {
 	  writeToSettingsMap();
