@@ -74,6 +74,7 @@ import javax.swing.ScrollPaneConstants;import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultCaret;
+import javax.swing.text.Segment;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
@@ -531,8 +532,15 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	    File[] children = file.listFiles();
 	    if (children != null) {
 	        for (File child : children) {
-	            all.add(child);
-	            addTree(child, all);
+	        	if (child.getName().endsWith(".xsl")) {
+	        		all.add(child);
+		            addTree(child, all);
+	        	}
+	        		
+	        		
+	        		
+//	            all.add(child);
+//	            addTree(child, all);
 	        }
 	    }
 	}
@@ -1182,7 +1190,8 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 //	        frame.setLocationRelativeTo(customMessagesArea);
 	        frame.setVisible(true);
 //	        output.setText("C:/Users/imsh/testFolda" + "\n" + "C:/Users/imsh/Desktop/sample" + "\n");
-	        output.append("current: " + settingsMap.get("stylesheetsFolderPath"));
+	        output.append("Stylesheets folder: " + settingsMap.get("stylesheetsFolderPath"));
+//	        output.append("the name of the <xsl:param> has to be on the same line as the opening tag");
 		}
 	}
 	public static class SettingsButtonListener implements ActionListener {
@@ -1342,9 +1351,11 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 //			transformerPE.transform(xmlSrc, new StreamResult(textPage.toString()));
 			
 			int length = textPage.getDocument().getLength();
-			textPage.select(0, length);
-			textPage.deleteSelection();
+//			textPage.select(0, length);
+//			textPage.deleteSelection();
+			textPage.getDocument().remove(0, textPage.getDocument().getLength());
 			textPage.getDocument().insertString(0, sw.toString(), null);
+			
 			
 		} catch (TransformerException | BadLocationException e) {
 			pluginWorkspaceAccess.showInformationMessage(xslSrc.getSystemId() + ": " + e.getMessage());
