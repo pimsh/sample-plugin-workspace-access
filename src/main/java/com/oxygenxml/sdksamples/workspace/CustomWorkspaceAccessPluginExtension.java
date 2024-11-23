@@ -177,11 +177,11 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
 	  
 //	  pluginWorkspaceAccess.showInformationMessage("SAXON EDITION: " + processor.getSaxonEdition() + "\n" + processor.getXmlVersion() + "\n" + processor.getUnderlyingConfiguration() + "\n");
+	  
 	  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
 	  final ro.sync.exml.workspace.api.standalone.actions.ActionsProvider actionsProvider = pluginWorkspaceAccess.getActionsProvider();
 	  //The "ro.sync.exml.options.APIAccessibleOptionTags" contains all accessible keys.
 	  //		  pluginWorkspaceAccess.setGlobalObjectProperty("can.edit.read.only.files", Boolean.FALSE);
-	
 	String userHomePath = System.getProperty("user.home").replace("\\", "/");
 	File dir = new File(userHomePath + "/OxygenPluginConfig");
 	if (!dir.exists()){
@@ -497,19 +497,26 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 			 String date = getDate();
 			 // editorAccess.save();
 			 // current path where the file sits
+			 pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getEditorLocation()));
 			 String path = String.valueOf(editorAccess.getEditorLocation());
+			 String userDesktopPath = (System.getProperty(("user.home")) + "\\Desktop").replace("\\", "/");
+//			 String userDesktopPath = String.valueOf(System.getProperty(("user.home").replace("\\", "/") + "/Desktop"));
 			 // cutting off the "file:"
 			 File file1 = new File(path.substring(6, path.length()));
 			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
+//			 File file3 = new File(userDesktopPath + "/BACKUP." + date);
+//			 File file3 = new File(userDesktopPath + ".BACKUP." + date);
+			 File file3 = new File(userDesktopPath + "/" + path.substring(path.lastIndexOf("/"), path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
 			 
 			 try {
 				copyFileUsingChannel(file1, file2);
+				copyFileUsingChannel(file1, file3);
 				
 			} catch (IOException e) {
 				pluginWorkspaceAccess.showInformationMessage(e.getMessage());
 			}
 			 
-			pluginWorkspaceAccess.showInformationMessage("Backup created: " + file2.getPath().replace("\\", "/"));
+			pluginWorkspaceAccess.showInformationMessage("Backups created: " + file2.getPath().replace("\\", "/") + "\n" +  file3.getPath().replace("\\", "/"));
 		 }
 	 };
  }
@@ -536,8 +543,6 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 	        		all.add(child);
 		            addTree(child, all);
 	        	}
-	        		
-	        		
 	        		
 //	            all.add(child);
 //	            addTree(child, all);
