@@ -23,5 +23,5 @@
   <!--The sample view which will present messages from the sample plugin.-->
   <view id="SampleWorkspaceAccessID" initialSide="WEST" initialRow="0"/>
   <!--The sample toolbar which will present messages from the sample plugin.-->
-  <toolbar id="SampleWorkspaceAccessToolbarID" initialSide="NORTH" initialRow="1"/>
+  <toolbar id="TESTBAR" initialSide="NORTH" initialRow="1"/>
 </plugin>

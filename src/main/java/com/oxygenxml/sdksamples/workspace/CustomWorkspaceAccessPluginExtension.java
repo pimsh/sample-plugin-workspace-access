@@ -70,6 +70,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JToolBar;
 import javax.swing.ScrollPaneConstants;import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -175,7 +176,6 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
    * @see ro.sync.exml.plugin.workspace.WorkspaceAccessPluginExtension#applicationStarted(ro.sync.exml.workspace.api.standalone.StandalonePluginWorkspace)
    */
   public void applicationStarted(final StandalonePluginWorkspace pluginWorkspaceAccess) {
-	  
 //	  pluginWorkspaceAccess.showInformationMessage("SAXON EDITION: " + processor.getSaxonEdition() + "\n" + processor.getXmlVersion() + "\n" + processor.getUnderlyingConfiguration() + "\n");
 	  
 	  WSEditor editorAccess = pluginWorkspaceAccess.getCurrentEditorAccess(StandalonePluginWorkspace.MAIN_EDITING_AREA);
@@ -446,7 +446,7 @@ public class CustomWorkspaceAccessPluginExtension implements WorkspaceAccessPlug
 		  
 		  public void customizeToolbar(ToolbarInfo toolbarInfo) {
 			  //The toolbar ID is defined in the "plugin.xml"
-			  if("SampleWorkspaceAccessToolbarID".equals(toolbarInfo.getToolbarID())) {
+			  if("TESTBAR".equals(toolbarInfo.getToolbarID())) {
 				  List<JComponent> comps = new ArrayList<JComponent>(); 
 				  JComponent[] initialComponents = toolbarInfo.getComponents();
 				  boolean hasInitialComponents = initialComponents != null && initialComponents.length > 0; 
@@ -497,7 +497,6 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 			 String date = getDate();
 			 // editorAccess.save();
 			 // current path where the file sits
-			 pluginWorkspaceAccess.showInformationMessage(String.valueOf(editorAccess.getEditorLocation()));
 			 String path = String.valueOf(editorAccess.getEditorLocation());
 			 String userDesktopPath = (System.getProperty(("user.home")) + "\\Desktop").replace("\\", "/");
 //			 String userDesktopPath = String.valueOf(System.getProperty(("user.home").replace("\\", "/") + "/Desktop"));
@@ -506,6 +505,8 @@ private AbstractAction createBackupAction(final StandalonePluginWorkspace plugin
 			 File file2 = new File(path.substring(6, path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
 //			 File file3 = new File(userDesktopPath + "/BACKUP." + date);
 //			 File file3 = new File(userDesktopPath + ".BACKUP." + date);
+			 
+//			 TODO MAKE IT STREAM THE LOCALLY OPEN STRING (if the local backup be empty)
 			 File file3 = new File(userDesktopPath + "/" + path.substring(path.lastIndexOf("/"), path.length()-8).concat('.' + date + path.substring(path.length()-8, path.length())));
 			 
 			 try {
